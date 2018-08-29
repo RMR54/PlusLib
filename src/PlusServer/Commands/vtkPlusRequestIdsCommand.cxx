@@ -158,7 +158,7 @@ PlusStatus vtkPlusRequestIdsCommand::Execute()
   {
     std::string responseMessage;
     bool addSeparator = false;
-    std::map<std::string, std::string> keyValuePairs;
+    igtl::MessageBase::MetaDataMap keyValuePairs;
 
     for (DeviceCollectionConstIterator deviceIt = aCollection.begin(); deviceIt != aCollection.end(); ++deviceIt)
     {
@@ -173,7 +173,7 @@ PlusStatus vtkPlusRequestIdsCommand::Execute()
           }
           responseMessage += (*it)->GetChannelId();
           addSeparator = true;
-          keyValuePairs[(*it)->GetChannelId()] = (*it)->GetChannelId();
+          keyValuePairs[(*it)->GetChannelId()] = std::pair<IANA_ENCODING_TYPE, std::string>(IANA_TYPE_US_ASCII, (*it)->GetChannelId());
         }
       }
     }
@@ -183,7 +183,7 @@ PlusStatus vtkPlusRequestIdsCommand::Execute()
     {
       LOG_WARNING("Unable to locate client data for client id: " << this->GetClientId());
     }
-    if (info.ClientHeaderVersion <= IGTL_HEADER_VERSION_2)
+    if (info.GetClientHeaderVersion() <= IGTL_HEADER_VERSION_2)
     {
       oss << responseMessage;
     }
@@ -199,7 +199,7 @@ PlusStatus vtkPlusRequestIdsCommand::Execute()
   {
     std::string responseMessage;
     bool addSeparator = false;
-    std::map<std::string, std::string> keyValuePairs;
+    igtl::MessageBase::MetaDataMap keyValuePairs;
 
     for (DeviceCollectionConstIterator deviceIt = aCollection.begin(); deviceIt != aCollection.end(); ++deviceIt)
     {
@@ -228,7 +228,7 @@ PlusStatus vtkPlusRequestIdsCommand::Execute()
         responseMessage += aDevice->GetDeviceId();
         addSeparator = true;
 
-        keyValuePairs[aDevice->GetDeviceId()] = aDevice->GetDeviceId();
+        keyValuePairs[aDevice->GetDeviceId()] = std::pair<IANA_ENCODING_TYPE, std::string>(IANA_TYPE_US_ASCII, aDevice->GetDeviceId());
       }
     }
     std::ostringstream oss;
@@ -237,7 +237,7 @@ PlusStatus vtkPlusRequestIdsCommand::Execute()
     {
       LOG_WARNING("Unable to locate client data for client id: " << this->GetClientId());
     }
-    if (info.ClientHeaderVersion <= IGTL_HEADER_VERSION_2)
+    if (info.GetClientHeaderVersion() <= IGTL_HEADER_VERSION_2)
     {
       oss << responseMessage;
     }

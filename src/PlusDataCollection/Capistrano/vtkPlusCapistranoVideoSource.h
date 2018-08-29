@@ -16,7 +16,7 @@
  \brief Class for acquiring ultrasound images from Capistrano Labs USB ultrasound systems.
 
  Requires PLUS_USE_CAPISTRANO_VIDEO option in CMake.
- Requires the Capistrano cSDK2013 (SDK provided by Capistrano Labs).
+ Requires the Capistrano cSDK2018, cSDK2016, or cSDK2013 (SDK provided by Capistrano Labs).
 
  \ingroup PlusLibDataCollection.
 */
@@ -24,7 +24,7 @@ class vtkPlusDataCollectionExport vtkPlusCapistranoVideoSource: public vtkPlusUs
 {
 public:
   /*! Constructor for a smart pointer of this class*/
-  static vtkPlusCapistranoVideoSource * New();
+  static vtkPlusCapistranoVideoSource* New();
   vtkTypeMacro(vtkPlusCapistranoVideoSource, vtkPlusDevice);
   virtual void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
 
@@ -43,6 +43,17 @@ public:
   /*! Get the version of SDK */
   virtual std::string GetSdkVersion();
 
+#ifdef CAPISTRANO_SDK2018
+  /*! Get the hardware version. */
+  virtual int GetHardwareVersion();
+
+  /*! Get the high pass filter. */
+  virtual int GetHighPassFilter();
+
+  /*! Get the low pass filter. */
+  virtual int GetLowPassFilter();
+#endif
+
   /* Update Speed of Sound */
   PlusStatus GetProbeVelocityDevice(float& aVel);
 
@@ -51,6 +62,9 @@ public:
 
   /* Set the scan directional mode of US probe */
   PlusStatus SetBidirectionalMode(bool mode);
+
+  /* Get the scan directional mode of US probe */
+  bool GetBidirectionalMode();
 
   /* Set the size of cinebuffer of US probe */
   PlusStatus SetCineBuffers(int cinebuffer);
@@ -94,11 +108,11 @@ public:
 
   /* State is the desired overscan multiplier.
   *  Overscan is done in 6.25% steps from 6.25% to 50% (three-bit number).
-  *  As such, the valid values are 0…7 which correspond to 6.25%, 12.5%, …, 43.75%, 50%. */
+  *  As such, the valid values are 0â€¦7 which correspond to 6.25%, 12.5%, â€¦, 43.75%, 50%. */
   PlusStatus SetOverscan(int state);
 
   /* Overscan multiplier. Overscan is done in 6.25% steps from 6.25% to 50% (three-bit number).
-  *  As such, the valid values are 0…7 which correspond to 6.25%, 12.5%, …, 43.75%, 50%. */
+  *  As such, the valid values are 0â€¦7 which correspond to 6.25%, 12.5%, â€¦, 43.75%, 50%. */
   int GetOverscan();
 
   /* Sets the desired probe servo derivative compensation */
@@ -123,7 +137,7 @@ public:
   PlusStatus SetBModeViewOption(unsigned int bmodeviewoption);
 
   /* Set the size of US B-mode image */
-  PlusStatus SetImageSize(int imageSize[2]);
+  PlusStatus SetImageSize(const FrameSizeType& imageSize);
 
   /* Set the Intensity (Brightness) of US B-mode image */
   PlusStatus SetIntensity(double value);
@@ -159,7 +173,7 @@ public:
   PlusStatus SetNewImagingParametersDevice(const vtkPlusUsImagingParameters& newImagingParameters);
 
   /*! Set Current Pixel Spacing values Of US Image (mm) */
-  vtkSetVector3Macro(CurrentPixelSpacingMm, double); 
+  vtkSetVector3Macro(CurrentPixelSpacingMm, double);
 
   /*! Get Current Pixel Spacing values Of US Image (mm) */
   vtkGetVector3Macro(CurrentPixelSpacingMm, double);
@@ -171,7 +185,6 @@ public:
   bool IsFrozen();
 
 protected:
-
   /*! Constructor */
   vtkPlusCapistranoVideoSource();
 
@@ -267,8 +280,8 @@ protected:
   PlusTrackedFrame::FieldMapType CustomFields;
 
 private:
-  vtkPlusCapistranoVideoSource(const vtkPlusCapistranoVideoSource &); // Not implemented
-  void operator=(const vtkPlusCapistranoVideoSource &); // Not implemented
+  vtkPlusCapistranoVideoSource(const vtkPlusCapistranoVideoSource&);  // Not implemented
+  void operator=(const vtkPlusCapistranoVideoSource&);  // Not implemented
 };
 
 #endif

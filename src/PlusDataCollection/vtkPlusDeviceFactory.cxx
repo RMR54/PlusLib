@@ -40,11 +40,17 @@ See License.txt for details.
 #ifdef PLUS_USE_MICRONTRACKER
   #include "vtkPlusMicronTracker.h"
 #endif
+#ifdef PLUS_USE_WITMOTIONTRACKER
+  #include "vtkPlusWitMotionTracker.h"
+#endif
 #ifdef PLUS_USE_INTELREALSENSE
-  #include "vtkPlusIntelRealSenseTracker.h"
+  #include "vtkPlusIntelRealSense.h"
 #endif
 #ifdef PLUS_USE_OPTICAL_MARKER_TRACKER
   #include "vtkPlusOpticalMarkerTracker.h"
+#endif
+#ifdef PLUS_USE_ATRACSYS
+  #include "vtkPlusAtracsysTracker.h"
 #endif
 #ifdef PLUS_USE_STEALTHLINK
   #include "vtkPlusStealthLinkTracker.h"
@@ -172,6 +178,21 @@ See License.txt for details.
   #include "vtkPlusOpenCVCaptureVideoSource.h"
 #endif
 
+#ifdef PLUS_USE_OPENHAPTICS
+  #include "vtkPlusOpenHapticsDevice.h"
+#endif
+
+#ifdef PLUS_USE_V4L2
+  #include "vtkPlusV4L2VideoSource.h"
+#endif
+
+#ifdef PLUS_USE_INFRARED_SEEK_CAM
+  #include "vtkInfraredSeekCam.h" 
+#endif
+
+#ifdef PLUS_USE_INFRARED_TEQ1_CAM
+  #include "vtkInfraredTEQ1Cam.h" 
+#endif
 //----------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkPlusDeviceFactory);
@@ -207,11 +228,18 @@ vtkPlusDeviceFactory::vtkPlusDeviceFactory()
 #ifdef PLUS_USE_MICRONTRACKER
   RegisterDevice("MicronTracker", "vtkPlusMicronTracker", (PointerToDevice)&vtkPlusMicronTracker::New);
 #endif
-#ifdef PLUS_USE_INTELREALSENSE
-  RegisterDevice("IntelRealSenseTracker", "vtkPlusIntelRealSenseTracker", (PointerToDevice)&vtkPlusIntelRealSenseTracker::New);
+#ifdef PLUS_USE_WITMOTIONTRACKER
+  RegisterDevice("WitMotionTracker", "vtkPlusWitMotionTracker", (PointerToDevice)&vtkPlusWitMotionTracker::New);
 #endif
+#ifdef PLUS_USE_INTELREALSENSE
+  RegisterDevice("IntelRealSense", "vtkPlusIntelRealSense", (PointerToDevice)&vtkPlusIntelRealSense::New);
+#endif
+
 #ifdef PLUS_USE_OPTICAL_MARKER_TRACKER
   RegisterDevice("OpticalMarkerTracker", "vtkPlusOpticalMarkerTracker", (PointerToDevice)&vtkPlusOpticalMarkerTracker::New);
+#endif
+#ifdef PLUS_USE_ATRACSYS
+  RegisterDevice("AtracsysTracker", "vtkPlusAtracsysTracker", (PointerToDevice)&vtkPlusAtracsysTracker::New);
 #endif
 #ifdef PLUS_USE_STEALTHLINK
   RegisterDevice("StealthLinkTracker", "vtkPlusStealthLinkTracker", (PointerToDevice)&vtkPlusStealthLinkTracker::New);
@@ -310,6 +338,22 @@ vtkPlusDeviceFactory::vtkPlusDeviceFactory()
 #endif
 #ifdef PLUS_USE_OpenCV_VIDEO
   RegisterDevice("OpenCVVideo", "vtkPlusOpenCVCaptureVideoSource", (PointerToDevice)&vtkPlusOpenCVCaptureVideoSource::New);
+#endif
+
+#ifdef PLUS_USE_V4L2
+  RegisterDevice("V4L2Video", "vtkPlusV4L2VideoSource", (PointerToDevice)&vtkPlusV4L2VideoSource::New);
+#endif
+
+#ifdef PLUS_USE_OPENHAPTICS
+  RegisterDevice("OpenHaptics", "vtkPlusOpenHapticsDevice", (PointerToDevice)&vtkPlusOpenHapticsDevice::New);
+#endif
+
+#ifdef PLUS_USE_INFRARED_SEEK_CAM
+  RegisterDevice("InfraredSeekCam", "vtkInfraredSeekCam", (PointerToDevice)&vtkInfraredSeekCam::New);
+#endif
+
+#ifdef PLUS_USE_INFRARED_TEQ1_CAM
+  RegisterDevice("InfraredTEQ1Cam", "vtkInfraredTEQ1Cam", (PointerToDevice)&vtkInfraredTEQ1Cam::New);
 #endif
 
   // Virtual Devices

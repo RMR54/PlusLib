@@ -9,7 +9,7 @@ INCLUDE(CMake/PlusLibMacros.cmake)
 # ------------------------------------------------------------------------
 # Set project version number
 SET(PLUSLIB_VERSION_MAJOR "2")
-SET(PLUSLIB_VERSION_MINOR "5")
+SET(PLUSLIB_VERSION_MINOR "7")
 SET(PLUSLIB_VERSION_PATCH "0")
 SET(PLUSLIB_VERSION ${PLUSLIB_VERSION_MAJOR}.${PLUSLIB_VERSION_MINOR}.${PLUSLIB_VERSION_PATCH})
 
@@ -137,7 +137,7 @@ ENDIF()
 # --------------------------------------------------------------------------
 # Set up paths for data and SDKs
 #
-SET(PLUSLIB_TOOLS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tools)
+SET(PLUSLIB_TOOLS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Tools)
 
 SET(ATC_TRAKSTAR_BASE_DIR ${PLUSLIB_TOOLS_DIR}/Ascension/trakSTAR_940041_RevE)
 SET(ATC_TRAKSTAR_INCLUDE_DIR ${ATC_TRAKSTAR_BASE_DIR}/inc CACHE PATH "Path to the Ascension trakSTAR 3D Guidance include folder (where the ATC3DG.h file is located)" FORCE )
@@ -178,7 +178,7 @@ MARK_AS_ADVANCED(PHIDGET_SPATIAL_BASE_DIR
   PHIDGET_SPATIAL_BINARY_DIR
   )
 IF(PLUS_USE_PHIDGET_SPATIAL_TRACKER)
-  ADD_SUBDIRECTORY(tools/Phidget/Phidget22)
+  ADD_SUBDIRECTORY(${PLUSLIB_TOOLS_DIR}/Phidget/Phidget22)
 ENDIF()
 
 SET(EPIPHAN_SDK_BASE_DIR ${PLUSLIB_TOOLS_DIR}/Epiphan)
@@ -196,7 +196,7 @@ MARK_AS_ADVANCED(EPIPHAN_SDK_BASE_DIR
   EPIPHAN_LIB_DIR
   )
 IF(PLUS_USE_EPIPHAN)
-  ADD_SUBDIRECTORY(tools/Epiphan)
+  ADD_SUBDIRECTORY(${PLUSLIB_TOOLS_DIR}/Epiphan)
 ENDIF()
 
 SET(USDIGITAL_SEI_BASE_DIR ${PLUSLIB_TOOLS_DIR}/UsDigital/SEI_5.22)
@@ -209,7 +209,7 @@ MARK_AS_ADVANCED(USDIGITAL_SEI_BASE_DIR
   USDIGITAL_SEI_LIB_DIR
   )
 IF(PLUS_USE_BRACHY_TRACKER)
-  ADD_SUBDIRECTORY(tools/UsDigital/SEI_5.22)
+  ADD_SUBDIRECTORY(${PLUSLIB_TOOLS_DIR}/UsDigital/SEI_5.22)
 ENDIF()
 
 IF(WIN32)
@@ -228,9 +228,15 @@ IF(WIN32)
     NVIDIA_DVP_LIB_DIR
     )
   IF(PLUS_USE_NVIDIA_DVP)
-    ADD_SUBDIRECTORY(tools/NVidia/dvp170)
+    ADD_SUBDIRECTORY(${PLUSLIB_TOOLS_DIR}/NVidia/dvp170)
   ENDIF()
 ENDIF()
+
+INCLUDE (CheckCXXSourceCompiles)
+CHECK_CXX_SOURCE_COMPILES("#include <future>
+  int main(){ return 0; }" 
+  HAVE_FUTURE
+  )
 
 # --------------------------------------------------------------------------
 # Subdirs

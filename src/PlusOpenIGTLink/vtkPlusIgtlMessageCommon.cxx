@@ -25,6 +25,9 @@ See License.txt for details.
 #include <igtlioImageConverter.h>
 #include <igtlioPolyDataConverter.h>
 #include <igtlioTransformConverter.h>
+#if defined(OpenIGTLink_ENABLE_VIDEOSTREAMING)
+#include <igtlioVideoConverter.h>
+#endif
 
 //----------------------------------------------------------------------------
 
@@ -74,7 +77,7 @@ PlusStatus vtkPlusIgtlMessageCommon::GetIgtlMatrix(igtl::Matrix4x4& igtlMatrix,
   }
 
   // Copy VTK matrix to IGTL matrix
-  igtlio::TransformConverter::VTKToIGTLTransform(*vtkMatrix, igtlMatrix);
+  igtlioTransformConverter::VTKToIGTLTransform(*vtkMatrix, igtlMatrix);
 
   return PLUS_SUCCESS;
 }
@@ -149,7 +152,7 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackTrackedFrameMessage(igtl::MessageHead
   if (embeddedTransformName.IsValid())
   {
     // Save the transform that is embedded in the TRACKEDFRAME message into the tracked frame
-    trackedFrame.SetCustomFrameTransform(embeddedTransformName, trackedFrameMsg->GetEmbeddedImageTransform());
+    trackedFrame.SetFrameTransform(embeddedTransformName, trackedFrameMsg->GetEmbeddedImageTransform());
   }
 
   return PLUS_SUCCESS;
@@ -236,7 +239,12 @@ PlusStatus vtkPlusIgtlMessageCommon::PackImageMessage(igtl::ImageMessage::Pointe
   double imageSpacingMm[3] = { 0 };
   double imageOriginMm[3] = { 0 };
   int scalarType = PlusVideoFrame::GetIGTLScalarPixelTypeFromVTK(trackedFrame.GetImageData()->GetVTKScalarPixelType());
-  int numScalarComponents = trackedFrame.GetImageData()->GetNumberOfScalarComponents();
+  unsigned int numScalarComponents(1);
+  if (trackedFrame.GetImageData()->GetNumberOfScalarComponents(numScalarComponents) == PLUS_FAIL)
+  {
+    LOG_ERROR("Unable to retrieve number of scalar components.");
+    return PLUS_FAIL;
+  }
 
   frameImage->GetDimensions(imageSizePixels);
   frameImage->GetSpacing(imageSpacingMm);
@@ -263,7 +271,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackImageMessage(igtl::ImageMessage::Pointe
   memcpy(igtlImagePointer, vtkImagePointer, imageMessage->GetImageSize());
 
   // Convert VTK transform to IGTL transform.
-  if (igtlio::ImageConverter::VTKTransformToIGTLImage(matrix, imageSizePixels, imageSpacingMm, imageOriginMm, imageMessage) != 1)
+  if (igtlioImageConverter::VTKTransformToIGTLImage(matrix, imageSizePixels, imageSpacingMm, imageOriginMm, imageMessage) != 1)
   {
     LOG_ERROR("Failed to pack image message - unable to compute IJKToRAS transform");
     return PLUS_FAIL;
@@ -307,7 +315,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackImageMessage(igtl::ImageMessage::Pointe
 
   double imageOriginMm[3] = { 0 };
   image->GetOrigin(imageOriginMm);
-  // imageMessage->SetOrigin() is not used, because origin and normal is set later by igtlio::ImageConverter::VTKTransformToIGTLImage()
+  // imageMessage->SetOrigin() is not used, because origin and normal is set later by igtlioImageConverter::VTKTransformToIGTLImage()
 
   int scalarType = PlusVideoFrame::GetIGTLScalarPixelTypeFromVTK(image->GetScalarType());
   imageMessage->SetScalarType(scalarType);
@@ -319,7 +327,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackImageMessage(igtl::ImageMessage::Pointe
 
   memcpy(igtlImagePointer, vtkImagePointer, imageMessage->GetImageSize());
 
-  if (igtlio::ImageConverter::VTKTransformToIGTLImage(imageToReferenceTransform, imageSizePixels, imageSpacingMm, imageOriginMm, imageMessage) != 1)
+  if (igtlioImageConverter::VTKTransformToIGTLImage(imageToReferenceTransform, imageSizePixels, imageSpacingMm, imageOriginMm, imageMessage) != 1)
   {
     LOG_ERROR("Failed to pack image message - unable to compute IJKToRAS transform");
     return PLUS_FAIL;
@@ -379,10 +387,17 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackImageMessage(igtl::MessageHeader::Poi
   int imgSize[3] = {0}; // image dimension in pixels
   imgMsg->GetDimensions(imgSize);
 
+  if (imgSize[0] < 0 || imgSize[1] < 0 || imgSize[2] < 0)
+  {
+    LOG_ERROR("Image with negative dimension. Aborting.");
+    return PLUS_FAIL;
+  }
+  FrameSizeType imageSize = {static_cast<unsigned int>(imgSize[0]), static_cast<unsigned int>(imgSize[1]), static_cast<unsigned int>(imgSize[2]) };
+
   // Set scalar pixel type
   PlusCommon::VTKScalarPixelType pixelType = PlusVideoFrame::GetVTKScalarPixelTypeFromIGTL(imgMsg->GetScalarType());
   PlusVideoFrame frame;
-  if (frame.AllocateFrame(imgSize, pixelType, imgMsg->GetNumComponents()) != PLUS_SUCCESS)
+  if (frame.AllocateFrame(imageSize, pixelType, imgMsg->GetNumComponents()) != PLUS_SUCCESS)
   {
     LOG_ERROR("Failed to allocate image data for tracked frame!");
     return PLUS_FAIL;
@@ -403,12 +418,12 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackImageMessage(igtl::MessageHeader::Poi
   if (embeddedTransformName.IsValid())
   {
     vtkSmartPointer<vtkMatrix4x4> vtkMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
-    if (igtlio::ImageConverter::IGTLImageToVTKTransform(imgMsg, vtkMatrix) != 1)
+    if (igtlioImageConverter::IGTLImageToVTKTransform(imgMsg, vtkMatrix) != 1)
     {
       LOG_ERROR("Failed to unpack image message - unable to extract IJKToRAS transform");
       return PLUS_FAIL;
     }
-    trackedFrame.SetCustomFrameTransform(embeddedTransformName, vtkMatrix);
+    trackedFrame.SetFrameTransform(embeddedTransformName, vtkMatrix);
   }
 
   return PLUS_SUCCESS;
@@ -458,10 +473,78 @@ PlusStatus vtkPlusIgtlMessageCommon::PackImageMetaMessage(igtl::ImageMetaMessage
   return PLUS_SUCCESS;
 }
 
+//----------------------------------------------------------------------------
+#if defined(OpenIGTLink_ENABLE_VIDEOSTREAMING)
+PlusStatus vtkPlusIgtlMessageCommon::PackVideoMessage(igtl::VideoMessage::Pointer videoMessage,
+  PlusTrackedFrame& trackedFrame, GenericEncoder* encoder, const vtkMatrix4x4& matrix)
+{
+  if (videoMessage.IsNull())
+  {
+    LOG_ERROR("Failed to pack image message - input image message is NULL");
+    return PLUS_FAIL;
+  }
+
+  if (!trackedFrame.GetImageData()->IsImageValid())
+  {
+    LOG_WARNING("Unable to send image message - image data is NOT valid!");
+    return PLUS_FAIL;
+  }
+
+  double timestamp = trackedFrame.GetTimestamp();
+  vtkImageData* frameImage = trackedFrame.GetImageData()->GetImage();
+
+  int imageSizePixels[3] = { 0 };
+  int subSizePixels[3] = { 0 };
+  int subOffset[3] = { 0 };
+  double imageSpacingMm[3] = { 0 };
+  double imageOriginMm[3] = { 0 };
+  int scalarType = PlusVideoFrame::GetIGTLScalarPixelTypeFromVTK(trackedFrame.GetImageData()->GetVTKScalarPixelType());
+  unsigned int numScalarComponents(1);
+  if (trackedFrame.GetImageData()->GetNumberOfScalarComponents(numScalarComponents) == PLUS_FAIL)
+  {
+    LOG_ERROR("Unable to retrieve number of scalar components.");
+    return PLUS_FAIL;
+  }
+
+  frameImage->GetDimensions(imageSizePixels);
+  frameImage->GetSpacing(imageSpacingMm);
+  frameImage->GetOrigin(imageOriginMm);
+  frameImage->GetDimensions(subSizePixels);
+
+  float spacingFloat[3] = { 0 };
+  for (int i = 0; i < 3; ++i)
+  {
+    spacingFloat[i] = (float)imageSpacingMm[i];
+  }
+
+  igtlioVideoConverter::HeaderData headerData = igtlioVideoConverter::HeaderData();
+  igtlioVideoConverter::ContentData contentData = igtlioVideoConverter::ContentData();
+  contentData.videoMessage = videoMessage;
+  contentData.image = frameImage;
+  contentData.transform = vtkSmartPointer<vtkMatrix4x4>::New();
+  contentData.transform->DeepCopy(&matrix);
+  headerData.deviceName = videoMessage->GetDeviceName();
+
+  if (!igtlioVideoConverter::toIGTL(headerData, contentData, encoder))
+  {
+    LOG_ERROR("Could not create video message!");
+    return PLUS_FAIL;
+  }
+
+  igtl::TimeStamp::Pointer igtlFrameTime = igtl::TimeStamp::New();
+  igtlFrameTime->SetTime(timestamp);
+  videoMessage->SetTimeStamp(igtlFrameTime);
+  videoMessage->Pack();
+
+  return PLUS_SUCCESS;
+}
+#endif
+
 //-------------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::PackTransformMessage(igtl::TransformMessage::Pointer transformMessage,
     PlusTransformName& transformName,
     igtl::Matrix4x4& igtlMatrix,
+    bool transformValid,
     double timestamp)
 {
   if (transformMessage.IsNull())
@@ -475,6 +558,8 @@ PlusStatus vtkPlusIgtlMessageCommon::PackTransformMessage(igtl::TransformMessage
 
   std::string strTransformName;
   transformName.GetTransformName(strTransformName);
+
+  transformMessage->SetMetaDataElement("TransformValid", transformValid);
 
   transformMessage->SetMatrix(igtlMatrix);
   transformMessage->SetTimeStamp(igtlTime);
@@ -498,7 +583,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackPolyDataMessage(igtl::PolyDataMessage::
   igtl::TimeStamp::Pointer igtlTime = igtl::TimeStamp::New();
   igtlTime->SetTime(timestamp);
 
-  igtlio::PolyDataConverter::VTKPolyDataToIGTL(polyData, polydataMessage);
+  igtlioPolyDataConverter::VTKPolyDataToIGTL(polyData, polydataMessage);
   polydataMessage->SetTimeStamp(igtlTime);
   polydataMessage->Pack();
 
@@ -522,7 +607,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackTrackingDataMessage(igtl::TrackingDataM
   for (auto it = transforms.begin(); it != transforms.end(); ++it)
   {
     igtl::Matrix4x4 matrix;
-    if (igtlio::TransformConverter::VTKToIGTLTransform(*(it->second), matrix) != 1)
+    if (igtlioTransformConverter::VTKToIGTLTransform(*(it->second), matrix) != 1)
     {
       LOG_ERROR("Unable to convert from VTK to IGTL transform.");
       continue;
@@ -592,7 +677,7 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackTrackingDataMessage(igtl::MessageHead
     currentTrackingData->GetMatrix(igtlMatrix);
 
     vtkSmartPointer<vtkMatrix4x4> mat = vtkSmartPointer<vtkMatrix4x4>::New();
-    if (igtlio::TransformConverter::IGTLToVTKTransform(igtlMatrix, mat) != 1)
+    if (igtlioTransformConverter::IGTLToVTKTransform(igtlMatrix, mat) != 1)
     {
       LOG_ERROR("Unable to unpack transform message - cannot convert from IGTL to VTK");
       continue;
@@ -657,7 +742,7 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackTransformMessage(igtl::MessageHeader:
 
   // convert igtl matrix to vtk matrix
   vtkSmartPointer<vtkMatrix4x4> mat = vtkSmartPointer<vtkMatrix4x4>::New();
-  if (igtlio::TransformConverter::IGTLToVTKTransform(igtlMatrix, transformMatrix) != 1)
+  if (igtlioTransformConverter::IGTLToVTKTransform(igtlMatrix, transformMatrix) != 1)
   {
     LOG_ERROR("Unable to unpack transform message - cannot convert from IGTL to VTK");
     return PLUS_FAIL;

@@ -211,9 +211,9 @@ PlusStatus vtkPlusVolumeReconstructor::WriteConfiguration(vtkXMLDataElement* con
 
   // Fan parameters
   // remove deprecated attributes
-  XML_REMOVE_ATTRIBUTE(reconConfig, "FanDepth");
-  XML_REMOVE_ATTRIBUTE(reconConfig, "FanOrigin");
-  XML_REMOVE_ATTRIBUTE(reconConfig, "FanAngles");
+  XML_REMOVE_ATTRIBUTE("FanDepth", reconConfig);
+  XML_REMOVE_ATTRIBUTE("FanOrigin", reconConfig);
+  XML_REMOVE_ATTRIBUTE("FanAngles", reconConfig);
   if (this->Reconstructor->FanClippingApplied())
   {
     reconConfig->SetVectorAttribute("FanAnglesDeg", 2, this->Reconstructor->GetFanAnglesDeg());
@@ -230,11 +230,11 @@ PlusStatus vtkPlusVolumeReconstructor::WriteConfiguration(vtkXMLDataElement* con
   }
   else
   {
-    XML_REMOVE_ATTRIBUTE(reconConfig, "FanAnglesDeg");
-    XML_REMOVE_ATTRIBUTE(reconConfig, "EnableFanAnglesAutoDetect")
-    XML_REMOVE_ATTRIBUTE(reconConfig, "FanOriginPixel");
-    XML_REMOVE_ATTRIBUTE(reconConfig, "FanRadiusStartPixel");
-    XML_REMOVE_ATTRIBUTE(reconConfig, "FanRadiusStopPixel");
+    XML_REMOVE_ATTRIBUTE("FanAnglesDeg", reconConfig);
+    XML_REMOVE_ATTRIBUTE("EnableFanAnglesAutoDetect", reconConfig);
+    XML_REMOVE_ATTRIBUTE("FanOriginPixel", reconConfig);
+    XML_REMOVE_ATTRIBUTE("FanRadiusStartPixel", reconConfig);
+    XML_REMOVE_ATTRIBUTE("FanRadiusStopPixel", reconConfig);
   }
 
   // reconstruction options
@@ -248,7 +248,7 @@ PlusStatus vtkPlusVolumeReconstructor::WriteConfiguration(vtkXMLDataElement* con
   }
   else
   {
-    XML_REMOVE_ATTRIBUTE(reconConfig, "NumberOfThreads");
+    XML_REMOVE_ATTRIBUTE("NumberOfThreads", reconConfig);
   }
 
   XML_WRITE_STRING_ATTRIBUTE_REMOVE_IF_EMPTY(ImportanceMaskFilename, reconConfig);
@@ -259,7 +259,7 @@ PlusStatus vtkPlusVolumeReconstructor::WriteConfiguration(vtkXMLDataElement* con
   }
   else
   {
-    XML_REMOVE_ATTRIBUTE(reconConfig, "PixelRejectionThreshold");
+    XML_REMOVE_ATTRIBUTE("PixelRejectionThreshold", reconConfig);
   }
 
   return PLUS_SUCCESS;
@@ -418,21 +418,33 @@ PlusStatus vtkPlusVolumeReconstructor::SetOutputExtentFromFrameList(vtkPlusTrack
     std::string strImageToReferenceTransformName;
     imageToReferenceTransformName.GetTransformName(strImageToReferenceTransformName);
     errorDescription = "Automatic volume extent computation failed, there were no valid " + strImageToReferenceTransformName + " transform available in the whole sequence"
-      + " (probably wrong image or reference coordinate system was defined or all transforms were invalid)";
+                       + " (probably wrong image or reference coordinate system was defined or all transforms were invalid)";
     LOG_ERROR(errorDescription);
     return PLUS_FAIL;
   }
 
+  // Adjust the output origin  so it falls on a multiple of voxel spacing.
+  // This ensures the same voxel lattice when multiple sweeps are volume-reconstructed independently.
+  // If the multi-sweep volume reconstructions are later merged, no resampling will be necessary.
+  double* outputSpacing = this->Reconstructor->GetOutputSpacing();
+  double outputOrigin_Ref[3] = { 0.0, 0.0, 0.0 };
+  for (int d = 0; d < 3; d++)
+  {
+    outputOrigin_Ref[d] = std::floor(extent_Ref[d * 2] / outputSpacing[d])*outputSpacing[d];
+  }
+
   // Set the output extent from the current min and max values, using the user-defined image resolution.
   int outputExtent[ 6 ] = { 0, 0, 0, 0, 0, 0 };
-  double* outputSpacing = this->Reconstructor->GetOutputSpacing();
-  outputExtent[ 1 ] = int(std::ceil((extent_Ref[1] - extent_Ref[0]) / outputSpacing[ 0 ]));
-  outputExtent[ 3 ] = int(std::ceil((extent_Ref[3] - extent_Ref[2]) / outputSpacing[ 1 ]));
-  outputExtent[ 5 ] = int(std::ceil((extent_Ref[5] - extent_Ref[4]) / outputSpacing[ 2 ]));
+  for (int d = 0; d < 3; d++)
+  {
+    // in general, this would be computed as int(std::floor((extent_Ref[d * 2] - outputOrigin_Ref[d]) / outputSpacing[d]));
+    // we set outputExtent so that this will be always 0
+    outputExtent[d * 2 + 1] = int(std::ceil((extent_Ref[d * 2 + 1] - outputOrigin_Ref[d]) / outputSpacing[d]));
+  }
 
   this->Reconstructor->SetOutputScalarMode(trackedFrameList->GetTrackedFrame(0)->GetImageData()->GetImage()->GetScalarType());
   this->Reconstructor->SetOutputExtent(outputExtent);
-  this->Reconstructor->SetOutputOrigin(extent_Ref[0], extent_Ref[2], extent_Ref[4]);
+  this->Reconstructor->SetOutputOrigin(outputOrigin_Ref);
   try
   {
     if (this->Reconstructor->ResetOutput() != PLUS_SUCCESS) // :TODO: call this automatically
@@ -657,18 +669,18 @@ PlusStatus vtkPlusVolumeReconstructor::SaveReconstructedVolumeToMetafile(vtkImag
   MET_ValueEnumType scalarType = MET_NONE;
   switch (volumeToSave->GetScalarType())
   {
-    case VTK_UNSIGNED_CHAR:
-      scalarType = MET_UCHAR;
-      break;
-    case VTK_UNSIGNED_SHORT:
-      scalarType = MET_USHORT;
-      break;
-    case VTK_FLOAT:
-      scalarType = MET_FLOAT;
-      break;
-    default:
-      LOG_ERROR("Scalar type is not supported!");
-      return PLUS_FAIL;
+  case VTK_UNSIGNED_CHAR:
+    scalarType = MET_UCHAR;
+    break;
+  case VTK_UNSIGNED_SHORT:
+    scalarType = MET_USHORT;
+    break;
+  case VTK_FLOAT:
+    scalarType = MET_FLOAT;
+    break;
+  default:
+    LOG_ERROR("Scalar type is not supported!");
+    return PLUS_FAIL;
   }
 
   MetaImage metaImage(volumeToSave->GetDimensions()[0], volumeToSave->GetDimensions()[1], volumeToSave->GetDimensions()[2],

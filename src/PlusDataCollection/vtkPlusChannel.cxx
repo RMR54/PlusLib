@@ -572,11 +572,11 @@ PlusStatus vtkPlusChannel::GetTrackedFrame(double timestamp, PlusTrackedFrame& a
     aTrackedFrame.SetImageData(frame);
 
     // Copy all custom fields
-    StreamBufferItem::FieldMapType fieldMap = CurrentStreamBufferItem.GetCustomFrameFieldMap();
+    StreamBufferItem::FieldMapType fieldMap = CurrentStreamBufferItem.GetFrameFieldMap();
     StreamBufferItem::FieldMapType::iterator fieldIterator;
     for (fieldIterator = fieldMap.begin(); fieldIterator != fieldMap.end(); fieldIterator++)
     {
-      aTrackedFrame.SetCustomFrameField((*fieldIterator).first, (*fieldIterator).second);
+      aTrackedFrame.SetFrameField((*fieldIterator).first, (*fieldIterator).second);
     }
 
     synchronizedTimestamp = CurrentStreamBufferItem.GetTimestamp(this->VideoSource->GetLocalTimeOffsetSec());
@@ -632,14 +632,14 @@ PlusStatus vtkPlusChannel::GetTrackedFrame(double timestamp, PlusTrackedFrame& a
       continue;
     }
 
-    if (aTrackedFrame.SetCustomFrameTransform(toolTransformName, dMatrix) != PLUS_SUCCESS)
+    if (aTrackedFrame.SetFrameTransform(toolTransformName, dMatrix) != PLUS_SUCCESS)
     {
       LOG_ERROR("Failed to set transform for tool " << aTool->GetId());
       numberOfErrors++;
       continue;
     }
 
-    if (aTrackedFrame.SetCustomFrameTransformStatus(toolTransformName, vtkPlusDevice::ConvertToolStatusToTrackedFrameFieldStatus(bufferItem.GetStatus())) != PLUS_SUCCESS)
+    if (aTrackedFrame.SetFrameTransformStatus(toolTransformName, vtkPlusDevice::ConvertToolStatusToTrackedFrameFieldStatus(bufferItem.GetStatus())) != PLUS_SUCCESS)
     {
       LOG_ERROR("Failed to set transform status for tool " << aTool->GetId());
       numberOfErrors++;
@@ -647,11 +647,11 @@ PlusStatus vtkPlusChannel::GetTrackedFrame(double timestamp, PlusTrackedFrame& a
     }
 
     // Copy all custom fields
-    StreamBufferItem::FieldMapType fieldMap = bufferItem.GetCustomFrameFieldMap();
+    StreamBufferItem::FieldMapType fieldMap = bufferItem.GetFrameFieldMap();
     StreamBufferItem::FieldMapType::iterator fieldIterator;
     for (fieldIterator = fieldMap.begin(); fieldIterator != fieldMap.end(); fieldIterator++)
     {
-      aTrackedFrame.SetCustomFrameField((*fieldIterator).first, (*fieldIterator).second);
+      aTrackedFrame.SetFrameField((*fieldIterator).first, (*fieldIterator).second);
     }
 
     synchronizedTimestamp = bufferItem.GetTimestamp(aTool->GetLocalTimeOffsetSec());
@@ -685,11 +685,11 @@ PlusStatus vtkPlusChannel::GetTrackedFrame(double timestamp, PlusTrackedFrame& a
     }
 
     // Copy all custom fields
-    StreamBufferItem::FieldMapType fieldMap = bufferItem.GetCustomFrameFieldMap();
+    StreamBufferItem::FieldMapType fieldMap = bufferItem.GetFrameFieldMap();
     StreamBufferItem::FieldMapType::iterator fieldIterator;
     for (fieldIterator = fieldMap.begin(); fieldIterator != fieldMap.end(); fieldIterator++)
     {
-      aTrackedFrame.SetCustomFrameField((*fieldIterator).first, (*fieldIterator).second);
+      aTrackedFrame.SetFrameField((*fieldIterator).first, (*fieldIterator).second);
     }
 
     synchronizedTimestamp = bufferItem.GetTimestamp(aSource->GetLocalTimeOffsetSec());
@@ -705,11 +705,8 @@ PlusStatus vtkPlusChannel::GetTrackedFrame(double timestamp, PlusTrackedFrame& a
 PlusStatus vtkPlusChannel::GetTrackedFrame(PlusTrackedFrame& trackedFrame)
 {
   double mostRecentFrameTimestamp(0);
-  if (this->GetMostRecentTimestamp(mostRecentFrameTimestamp) != PLUS_SUCCESS)
-  {
-    LOG_ERROR("Failed to get most recent timestamp from the buffer!");
-    return PLUS_FAIL;
-  }
+  RETURN_WITH_FAIL_IF(this->GetMostRecentTimestamp(mostRecentFrameTimestamp) != PLUS_SUCCESS,
+      "Failed to get most recent timestamp from the buffer!");
 
   return this->GetTrackedFrame(mostRecentFrameTimestamp, trackedFrame);
 }
@@ -752,11 +749,9 @@ PlusStatus vtkPlusChannel::GetTrackedFrameList(double& aTimestampOfLastFrameAlre
 
   // Get latest and oldest timestamp
   double mostRecentTimestamp(0);
-  if (this->GetMostRecentTimestamp(mostRecentTimestamp) != PLUS_SUCCESS)
-  {
-    LOG_ERROR("Unable to get most recent timestamp!");
-    return PLUS_FAIL;
-  }
+  static vtkPlusLogHelper logHelper(60.0, 500000);
+  CUSTOM_RETURN_WITH_FAIL_IF(this->GetMostRecentTimestamp(mostRecentTimestamp) != PLUS_SUCCESS,
+      "Unable to get most recent timestamp!");
 
   PlusStatus status = PLUS_SUCCESS;
   double oldestTimestamp(0);
@@ -1065,11 +1060,8 @@ PlusStatus vtkPlusChannel::GetTrackedFrameListSampled(double& aTimestampOfLastFr
   double startTimeSec = vtkPlusAccurateTimer::GetSystemTime();
 
   double mostRecentTimestamp(0);
-  if (this->GetMostRecentTimestamp(mostRecentTimestamp) != PLUS_SUCCESS)
-  {
-    LOG_ERROR("vtkPlusChannel::GetTrackedFrameListSampled failed: unable to get most recent timestamp. Probably no frames have been acquired yet.");
-    return PLUS_FAIL;
-  }
+  RETURN_WITH_FAIL_IF(this->GetMostRecentTimestamp(mostRecentTimestamp) != PLUS_SUCCESS,
+      "vtkPlusChannel::GetTrackedFrameListSampled failed: unable to get most recent timestamp. Probably no frames have been acquired yet.");
 
   PlusStatus status = PLUS_SUCCESS;
   // Add frames to input trackedFrameList
@@ -1277,11 +1269,8 @@ PlusStatus vtkPlusChannel::GetMostRecentTimestamp(double& ts)
   if (this->GetVideoDataAvailable())
   {
     // Get the most recent timestamp from the buffer
-    if (this->VideoSource->GetLatestTimeStamp(latestVideoTimestamp) != ITEM_OK)
-    {
-      LOG_WARNING("Unable to get latest timestamp from video buffer!");
-      return PLUS_FAIL;
-    }
+    RETURN_WITH_FAIL_IF(this->VideoSource->GetLatestTimeStamp(latestVideoTimestamp) != ITEM_OK,
+        "Unable to get latest timestamp from video buffer!");
   }
 
   double latestTrackerTimestamp(0); // the latest tracker timestamp that is available for all tools
@@ -1431,16 +1420,11 @@ PlusStatus vtkPlusChannel::GetMostRecentTimestamp(double& ts)
   {
     // Get the timestamp of the video item that is closest to the latest tracker item
     BufferItemUidType videoUid(0);
-    if (this->VideoSource->GetItemUidFromTime(latestTrackerTimestamp, videoUid) != ITEM_OK)
-    {
-      LOG_ERROR("Failed to get video buffer item UID from time: " << std::fixed << latestVideoTimestamp);
-      return PLUS_FAIL;
-    }
-    if (this->VideoSource->GetTimeStamp(videoUid, latestVideoTimestamp) != ITEM_OK)
-    {
-      LOG_ERROR("Failed to get video buffer timestamp from UID: " << videoUid);
-      return PLUS_FAIL;
-    }
+    static vtkPlusLogHelper logHelper(60.0, 500000);
+    CUSTOM_RETURN_WITH_FAIL_IF(this->VideoSource->GetItemUidFromTime(latestTrackerTimestamp, videoUid) != ITEM_OK,
+        "Failed to get video buffer item UID from time: " << std::fixed << latestVideoTimestamp);
+    RETURN_WITH_FAIL_IF(this->VideoSource->GetTimeStamp(videoUid, latestVideoTimestamp) != ITEM_OK,
+        "Failed to get video buffer timestamp from UID: " << videoUid);
     if (latestVideoTimestamp > latestTrackerTimestamp)
     {
       // the closest video timestamp is still larger than the last tracking data,
@@ -1469,16 +1453,10 @@ PlusStatus vtkPlusChannel::GetMostRecentTimestamp(double& ts)
   {
     // Get the timestamp of the video item that is closest to the latest field data item
     BufferItemUidType videoUid(0);
-    if (this->VideoSource->GetItemUidFromTime(latestFieldDataTimestamp, videoUid) != ITEM_OK)
-    {
-      LOG_ERROR("Failed to get video buffer item UID from time: " << std::fixed << latestVideoTimestamp);
-      return PLUS_FAIL;
-    }
-    if (this->VideoSource->GetTimeStamp(videoUid, latestVideoTimestamp) != ITEM_OK)
-    {
-      LOG_ERROR("Failed to get video buffer timestamp from UID: " << videoUid);
-      return PLUS_FAIL;
-    }
+    RETURN_WITH_FAIL_IF(this->VideoSource->GetItemUidFromTime(latestFieldDataTimestamp, videoUid) != ITEM_OK,
+        "Failed to get video buffer item UID from time: " << std::fixed << latestVideoTimestamp);
+    RETURN_WITH_FAIL_IF(this->VideoSource->GetTimeStamp(videoUid, latestVideoTimestamp) != ITEM_OK,
+        "Failed to get video buffer timestamp from UID: " << videoUid);
     if (latestVideoTimestamp > latestFieldDataTimestamp)
     {
       // the closest video timestamp is still larger than the last field data,
@@ -1736,11 +1714,9 @@ double vtkPlusChannel::GetClosestTrackedFrameTimestampByTime(double time)
 }
 
 //----------------------------------------------------------------------------
-PlusStatus vtkPlusChannel::GetBrightnessFrameSize(int aDim[3])
+PlusStatus vtkPlusChannel::GetBrightnessFrameSize(FrameSizeType& aDim)
 {
-  aDim[0] = this->BrightnessFrameSize[0];
-  aDim[1] = this->BrightnessFrameSize[1];
-  aDim[2] = this->BrightnessFrameSize[2];
+  aDim = this->BrightnessFrameSize;
 
   return PLUS_SUCCESS;
 }

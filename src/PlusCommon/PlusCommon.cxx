@@ -20,6 +20,34 @@ See License.txt for details.
 #include <string>
 
 //-------------------------------------------------------
+bool vtkPlusLogHelper::ShouldWeLog(bool errorPresent)
+{
+  if (errorPresent)
+  {
+    ++m_Count;
+    double timeStamp = vtkPlusAccurateTimer::GetSystemTime();
+    if (timeStamp - m_LastError > m_MinimumTimeBetweenLoggingSec
+        || m_Count > m_MinimumCountBetweenLogging)
+    {
+      //log the error this time
+      m_LastError = timeStamp;
+      m_Count = 0;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
+  else //error has just been removed, reset to initial state
+  {
+    m_LastError = -std::numeric_limits<double>::max() / 2;
+    m_Count = -2;
+    return false;
+  }
+}
+
+//-------------------------------------------------------
 PlusTransformName::PlusTransformName()
 {
 }
@@ -694,7 +722,7 @@ PlusStatus PlusCommon::DrawLine(vtkImageData& imageData, float greyValue, LINE_S
 }
 
 //-------------------------------------------------------
-bool PlusCommon::IsClippingRequested(const int clipOrigin[3], const int clipSize[3])
+bool PlusCommon::IsClippingRequested(const std::array<int, 3>& clipOrigin, const std::array<int, 3>& clipSize)
 {
   return (
            clipOrigin[0] != PlusCommon::NO_CLIP &&
@@ -707,7 +735,7 @@ bool PlusCommon::IsClippingRequested(const int clipOrigin[3], const int clipSize
 }
 
 //-------------------------------------------------------
-bool PlusCommon::IsClippingWithinExtents(const int clipOrigin[3], const int clipSize[3], const int extents[6])
+bool PlusCommon::IsClippingWithinExtents(const std::array<int, 3>& clipOrigin, const std::array<int, 3>& clipSize, const int extents[6])
 {
   return (clipOrigin[0] >= extents[0] && clipOrigin[0] <= extents[1]) &&
          (clipOrigin[1] >= extents[2] && clipOrigin[1] <= extents[3]) &&   // Verify that the origin is within the image

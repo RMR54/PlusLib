@@ -368,7 +368,7 @@ bool vtkPlusTrackedFrameList::ValidateSpeed(PlusTrackedFrame* trackedFrame)
 
   vtkSmartPointer<vtkMatrix4x4> inputTransformMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
   double inputTransformVector[16] = {0};
-  if (trackedFrame->GetCustomFrameTransform(this->FrameTransformNameForValidation, inputTransformVector))
+  if (trackedFrame->GetFrameTransform(this->FrameTransformNameForValidation, inputTransformVector))
   {
     inputTransformMatrix->DeepCopy(inputTransformVector);
   }
@@ -382,7 +382,7 @@ bool vtkPlusTrackedFrameList::ValidateSpeed(PlusTrackedFrame* trackedFrame)
 
   vtkSmartPointer<vtkMatrix4x4> latestTransformMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
   double latestTransformVector[16] = {0};
-  if ((*latestFrameInList)->GetCustomFrameTransform(this->FrameTransformNameForValidation, latestTransformVector))
+  if ((*latestFrameInList)->GetFrameTransform(this->FrameTransformNameForValidation, latestTransformVector))
   {
     latestTransformMatrix->DeepCopy(latestTransformVector);
   }
@@ -632,24 +632,25 @@ US_IMAGE_TYPE vtkPlusTrackedFrameList::GetImageType()
 
 
 //----------------------------------------------------------------------------
-unsigned int* vtkPlusTrackedFrameList::GetFrameSize()
+PlusStatus vtkPlusTrackedFrameList::GetFrameSize(FrameSizeType& outFrameSize)
 {
   if (this->GetNumberOfTrackedFrames() < 1)
   {
     LOG_ERROR("Unable to get image type: there are no frames in the tracked frame list!");
-    return NULL;
+    return PLUS_FAIL;
   }
 
   for (unsigned int i = 0; i < this->GetNumberOfTrackedFrames(); ++i)
   {
     if (this->GetTrackedFrame(i)->GetImageData() && this->GetTrackedFrame(i)->GetImageData()->IsImageValid())
     {
-      return this->GetTrackedFrame(i)->GetFrameSize();
+      outFrameSize = this->GetTrackedFrame(i)->GetFrameSize();
+      return PLUS_SUCCESS;
     }
   }
 
   LOG_WARNING("There are no valid images in the tracked frame list.");
-  return NULL;
+  return PLUS_FAIL;
 }
 
 //----------------------------------------------------------------------------

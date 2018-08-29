@@ -84,6 +84,12 @@ void vtkPlusCommand::SetCommandProcessor(vtkPlusCommandProcessor* processor)
 }
 
 //----------------------------------------------------------------------------
+void vtkPlusCommand::SetMetaData(const igtl::MessageBase::MetaDataMap& metaData)
+{
+  this->MetaData = metaData;
+}
+
+//----------------------------------------------------------------------------
 vtkPlusDataCollector* vtkPlusCommand::GetDataCollector()
 {
   if (this->CommandProcessor == NULL)
@@ -244,8 +250,10 @@ void vtkPlusCommand::PopCommandResponses(PlusCommandResponseList& responses)
 }
 
 //------------------------------------------------------------------------------
-void vtkPlusCommand::QueueCommandResponse(PlusStatus status, const std::string& message, const std::string& error, const std::map<std::string, std::string>* values)
+void vtkPlusCommand::QueueCommandResponse(PlusStatus status, const std::string& message, const std::string& error, const igtl::MessageBase::MetaDataMap* replyMetaData)
 {
+  // Proper v1/v2 header version response handling is performed in vtkPlusOpenIGTLinkServer::CreateIgtlMessageFromCommandResponse
+
   vtkSmartPointer<vtkPlusCommandRTSCommandResponse> commandResponse = vtkSmartPointer<vtkPlusCommandRTSCommandResponse>::New();
   commandResponse->SetClientId(this->ClientId);
   commandResponse->SetOriginalId(this->Id);
@@ -255,9 +263,9 @@ void vtkPlusCommand::QueueCommandResponse(PlusStatus status, const std::string& 
   commandResponse->SetRespondWithCommandMessage(this->RespondWithCommandMessage);
   commandResponse->SetErrorString(error);
   commandResponse->SetResultString(message);
-  if (values != NULL)
+  if (replyMetaData != NULL)
   {
-    commandResponse->SetParameters(*values);
+    commandResponse->SetParameters(*replyMetaData);
   }
   this->CommandResponseQueue.push_back(commandResponse);
 }

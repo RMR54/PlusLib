@@ -6,8 +6,11 @@ See License.txt for details.
 
 // Local includes
 #include "PlusConfigure.h"
-#include "vtkPlusCommand.h"
+#include "vtkPlusRecursiveCriticalSection.h"
 #include "vtkPlusCommandProcessor.h"
+
+// Command includes
+#include "vtkPlusCommand.h"
 #include "vtkPlusGetImageCommand.h"
 #include "vtkPlusReconstructVolumeCommand.h"
 #ifdef PLUS_USE_STEALTHLINK
@@ -16,16 +19,20 @@ See License.txt for details.
 #ifdef PLUS_USE_OPTIMET_CONOPROBE
   #include "vtkPlusConoProbeLinkCommand.h"
 #endif
-#include "igtl_header.h"
-#include "vtkPlusGetTransformCommand.h"
+#include "vtkPlusAddRecordingDeviceCommand.h"
 #include "vtkPlusGetPolydataCommand.h"
-#include "vtkPlusRecursiveCriticalSection.h"
+#include "vtkPlusGetTransformCommand.h"
+#include "vtkPlusGetUsParameterCommand.h"
 #include "vtkPlusRequestIdsCommand.h"
 #include "vtkPlusSaveConfigCommand.h"
 #include "vtkPlusSendTextCommand.h"
+#include "vtkPlusSetUsParameterCommand.h"
 #include "vtkPlusStartStopRecordingCommand.h"
 #include "vtkPlusUpdateTransformCommand.h"
 #include "vtkPlusVersionCommand.h"
+
+// IGTL includes
+#include "igtl_header.h"
 
 // VTK includes
 #include <vtkImageData.h>
@@ -54,6 +61,9 @@ vtkPlusCommandProcessor::vtkPlusCommandProcessor()
   RegisterPlusCommand(vtkSmartPointer<vtkPlusStartStopRecordingCommand>::New());
   RegisterPlusCommand(vtkSmartPointer<vtkPlusUpdateTransformCommand>::New());
   RegisterPlusCommand(vtkSmartPointer<vtkPlusVersionCommand>::New());
+  RegisterPlusCommand(vtkSmartPointer<vtkPlusSetUsParameterCommand>::New());
+  RegisterPlusCommand(vtkSmartPointer<vtkPlusGetUsParameterCommand>::New());
+  RegisterPlusCommand(vtkSmartPointer<vtkPlusAddRecordingDeviceCommand>::New());
 #ifdef PLUS_USE_STEALTHLINK
   RegisterPlusCommand(vtkSmartPointer<vtkPlusStealthLinkCommand>::New());
 #endif
@@ -199,7 +209,7 @@ PlusStatus vtkPlusCommandProcessor::RegisterPlusCommand(vtkPlusCommand* cmd)
 }
 
 //----------------------------------------------------------------------------
-vtkPlusCommand* vtkPlusCommandProcessor::CreatePlusCommand(const std::string& commandName, const std::string& commandStr)
+vtkPlusCommand* vtkPlusCommandProcessor::CreatePlusCommand(const std::string& commandName, const std::string& commandStr, const igtl::MessageBase::MetaDataMap& metaData)
 {
   vtkSmartPointer<vtkXMLDataElement> cmdElement = vtkSmartPointer<vtkXMLDataElement>::Take(vtkXMLUtilities::ReadElementFromString(commandStr.c_str()));
   if (cmdElement.GetPointer() == NULL)
@@ -222,6 +232,7 @@ vtkPlusCommand* vtkPlusCommandProcessor::CreatePlusCommand(const std::string& co
   }
 
   vtkPlusCommand* cmd = (this->RegisteredCommands[commandName])->Clone();
+  cmd->SetMetaData(metaData);
   if (cmd->ReadConfiguration(cmdElement) != PLUS_SUCCESS)
   {
     cmd->Delete();
@@ -233,7 +244,7 @@ vtkPlusCommand* vtkPlusCommandProcessor::CreatePlusCommand(const std::string& co
 }
 
 //------------------------------------------------------------------------------
-PlusStatus vtkPlusCommandProcessor::QueueCommand(bool respondUsingIGTLCommand, unsigned int clientId, const std::string& commandName, const std::string& commandString, const std::string& deviceName, uint32_t uid)
+PlusStatus vtkPlusCommandProcessor::QueueCommand(bool respondUsingIGTLCommand, unsigned int clientId, const std::string& commandName, const std::string& commandString, const std::string& deviceName, uint32_t uid, const igtl::MessageBase::MetaDataMap& metaData)
 {
   if (commandString.empty())
   {
@@ -247,12 +258,12 @@ PlusStatus vtkPlusCommandProcessor::QueueCommand(bool respondUsingIGTLCommand, u
     return PLUS_FAIL;
   }
 
-  vtkSmartPointer<vtkPlusCommand> cmd = vtkSmartPointer<vtkPlusCommand>::Take(CreatePlusCommand(commandName, commandString));
+  vtkSmartPointer<vtkPlusCommand> cmd = vtkSmartPointer<vtkPlusCommand>::Take(CreatePlusCommand(commandName, commandString, metaData));
   if (cmd.GetPointer() == NULL)
   {
     if (!respondUsingIGTLCommand)
     {
-      this->QueueStringResponse(PLUS_FAIL, deviceName, std::string("Error attempting to process command."));
+      this->QueueStringResponse(PLUS_FAIL, deviceName, clientId, std::string("Error attempting to process command."));
     }
     else
     {
@@ -275,7 +286,7 @@ PlusStatus vtkPlusCommandProcessor::QueueCommand(bool respondUsingIGTLCommand, u
 }
 
 //----------------------------------------------------------------------------
-PlusStatus vtkPlusCommandProcessor::QueueStringResponse(PlusStatus status, const std::string& deviceName, const std::string& replyString)
+PlusStatus vtkPlusCommandProcessor::QueueStringResponse(PlusStatus status, const std::string& deviceName, unsigned int clientId, const std::string& replyString)
 {
   vtkSmartPointer<vtkPlusCommandStringResponse> response = vtkSmartPointer<vtkPlusCommandStringResponse>::New();
   response->SetDeviceName(deviceName);
@@ -289,6 +300,7 @@ PlusStatus vtkPlusCommandProcessor::QueueStringResponse(PlusStatus status, const
   replyStr << " />";
 
   response->SetMessage(replyStr.str());
+  response->SetClientId(clientId);
   response->SetStatus(status);
 
   // Add response to the command response queue
@@ -317,7 +329,7 @@ PlusStatus vtkPlusCommandProcessor::QueueCommandResponse(PlusStatus status, cons
 }
 
 //------------------------------------------------------------------------------
-PlusStatus vtkPlusCommandProcessor::QueueGetImageMetaData(unsigned int clientId, const std::string &deviceName)
+PlusStatus vtkPlusCommandProcessor::QueueGetImageMetaData(unsigned int clientId, const std::string& deviceName)
 {
 
   vtkSmartPointer<vtkPlusGetImageCommand> cmdGetImage = vtkSmartPointer<vtkPlusGetImageCommand>::New();
@@ -335,7 +347,7 @@ PlusStatus vtkPlusCommandProcessor::QueueGetImageMetaData(unsigned int clientId,
 }
 
 //------------------------------------------------------------------------------
-PlusStatus vtkPlusCommandProcessor::QueueGetImage(unsigned int clientId, const std::string &deviceName)
+PlusStatus vtkPlusCommandProcessor::QueueGetImage(unsigned int clientId, const std::string& deviceName)
 {
   vtkSmartPointer<vtkPlusGetImageCommand> cmdGetImage = vtkSmartPointer<vtkPlusGetImageCommand>::New();
   cmdGetImage->SetCommandProcessor(this);

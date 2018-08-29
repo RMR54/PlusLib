@@ -176,7 +176,7 @@ PlusStatus vtkPlusSavedDataSource::InternalUpdateOriginalTimestamp(BufferItemUid
         StreamBufferItem::FieldMapType fieldMap;
         if (this->UseAllFrameFields)
         {
-          fieldMap = dataBufferItemToBeAdded.GetCustomFrameFieldMap();
+          fieldMap = dataBufferItemToBeAdded.GetFrameFieldMap();
         }
         if (this->AddVideoItemToVideoSources(this->GetVideoSources(), dataBufferItemToBeAdded.GetFrame(), this->FrameNumber, unfilteredTimestamp, filteredTimestamp, &fieldMap) != PLUS_SUCCESS)
         {
@@ -277,7 +277,7 @@ PlusStatus vtkPlusSavedDataSource::InternalUpdateCurrentTimestamp(BufferItemUidT
       StreamBufferItem::FieldMapType fieldMap;
       if (this->UseAllFrameFields)
       {
-        fieldMap = dataBufferItemToBeAdded.GetCustomFrameFieldMap();
+        fieldMap = dataBufferItemToBeAdded.GetFrameFieldMap();
       }
       if (this->AddVideoItemToVideoSources(this->GetVideoSources(), dataBufferItemToBeAdded.GetFrame(), this->FrameNumber, UNDEFINED_TIMESTAMP, UNDEFINED_TIMESTAMP, &fieldMap) != PLUS_SUCCESS)
       {
@@ -476,8 +476,20 @@ PlusStatus vtkPlusSavedDataSource::InternalConnectVideo(vtkPlusTrackedFrameList*
   this->LocalVideoBuffer = vtkPlusBuffer::New();
   this->LocalVideoBuffer->SetImageOrientation(savedDataBuffer->GetImageOrientation());
   this->LocalVideoBuffer->SetImageType(savedDataBuffer->GetImageType());
-  this->LocalVideoBuffer->SetFrameSize(savedDataBuffer->GetFrameSize());
-  this->LocalVideoBuffer->SetNumberOfScalarComponents(savedDataBuffer->GetTrackedFrame(0)->GetNumberOfScalarComponents());
+  FrameSizeType frameSize;
+  if (savedDataBuffer->GetFrameSize(frameSize) != PLUS_SUCCESS)
+  {
+    LOG_ERROR("Unable to retrieve frame size.");
+    return PLUS_FAIL;
+  }
+  this->LocalVideoBuffer->SetFrameSize(frameSize);
+  unsigned int numberOfScalarComponents;
+  if (savedDataBuffer->GetTrackedFrame(0)->GetNumberOfScalarComponents(numberOfScalarComponents) != PLUS_SUCCESS)
+  {
+    LOG_ERROR("Unable to retrieve number of scalar components.");
+    return PLUS_FAIL;
+  }
+  this->LocalVideoBuffer->SetNumberOfScalarComponents(numberOfScalarComponents);
   this->LocalVideoBuffer->SetPixelType(savedDataBuffer->GetTrackedFrame(0)->GetImageData()->GetVTKScalarPixelType());
   this->LocalVideoBuffer->SetBufferSize(savedDataBuffer->GetNumberOfTrackedFrames());
   this->LocalVideoBuffer->SetLocalTimeOffsetSec(0.0);   // the time offset is copied from the output, so reset it to 0
@@ -555,7 +567,7 @@ PlusStatus vtkPlusSavedDataSource::InternalConnectTracker(vtkPlusTrackedFrameLis
     }
 
     PlusTransformName toolTransformName(tool->GetId());
-    if (!frame->IsCustomFrameTransformNameDefined(toolTransformName))
+    if (!frame->IsFrameTransformNameDefined(toolTransformName))
     {
       std::string strTransformName;
       toolTransformName.GetTransformName(strTransformName);
@@ -563,9 +575,9 @@ PlusStatus vtkPlusSavedDataSource::InternalConnectTracker(vtkPlusTrackedFrameLis
       continue;
     }
 
-    if (frame->GetCustomFrameTransform(toolTransformName, transformMatrix) != PLUS_SUCCESS)
+    if (frame->GetFrameTransform(toolTransformName, transformMatrix) != PLUS_SUCCESS)
     {
-      LOG_WARNING("Cannot convert the custom frame field ( for tool " << tool->GetId() << ") to a transform");
+      LOG_WARNING("Cannot convert the frame field ( for tool " << tool->GetId() << ") to a transform");
       continue;
     }
     // a transform with the same name as the tool name has been found in the savedDataBuffer

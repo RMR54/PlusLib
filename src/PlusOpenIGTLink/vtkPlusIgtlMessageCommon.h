@@ -26,6 +26,10 @@ See License.txt for details.
 #include <igtlStringMessage.h>
 #include <igtlTrackingDataMessage.h>
 #include <igtlTransformMessage.h>
+#if defined(OpenIGTLink_ENABLE_VIDEOSTREAMING)
+#include <igtlCodecCommonClasses.h>
+#include <igtlVideoMessage.h>
+#endif
 
 class vtkXMLDataElement;
 class PlusTrackedFrame;
@@ -71,9 +75,14 @@ public:
   /*! Pack image meta deta message from vtkPlusServer::ImageMetaDataList  */
   static PlusStatus PackImageMetaMessage(igtl::ImageMetaMessage::Pointer imageMetaMessage, PlusCommon::ImageMetaDataList& imageMetaDataList);
 
+#if defined(OpenIGTLink_ENABLE_VIDEOSTREAMING)
+  /*! Pack video message from tracked frame */
+  static PlusStatus PackVideoMessage(igtl::VideoMessage::Pointer videoMessage, PlusTrackedFrame& trackedFrame, igtl::GenericEncoder* encoder, const vtkMatrix4x4& videoToReferenceTransform);
+#endif
+
   /*! Pack transform message from tracked frame */
   static PlusStatus PackTransformMessage(igtl::TransformMessage::Pointer transformMessage, PlusTransformName& transformName,
-                                         igtl::Matrix4x4& igtlMatrix, double timestamp);
+                                         igtl::Matrix4x4& igtlMatrix, bool transformValid, double timestamp);
 
   /*! Pack poly data message from polydata */
   static PlusStatus PackPolyDataMessage(igtl::PolyDataMessage::Pointer polydataMessage, vtkSmartPointer<vtkPolyData> polyData, double timestamp);

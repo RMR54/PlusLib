@@ -10,7 +10,7 @@
 #define __vtkPlusBkProFocusOemVideoSource_h
 
 #include "vtkPlusDataCollectionExport.h"
-
+#include "PlusTrackedFrame.h"
 #include "vtkPlusUsDevice.h"
 
 /*!
@@ -24,14 +24,6 @@
 class vtkPlusDataCollectionExport vtkPlusBkProFocusOemVideoSource : public vtkPlusUsDevice
 {
 public:
-
-  enum PROBE_TYPE
-  {
-    UNKNOWN,
-    SECTOR,
-    LINEAR,
-    MECHANICAL
-  };
 
   static vtkPlusBkProFocusOemVideoSource* New();
   vtkTypeMacro(vtkPlusBkProFocusOemVideoSource, vtkPlusDevice);
@@ -48,10 +40,10 @@ public:
   virtual PlusStatus NotifyConfigured();
 
   /*! BK scanner address */
-  vtkSetStringMacro(ScannerAddress);
+  vtkSetMacro(ScannerAddress, std::string);
 
   /*! BK scanner address */
-  vtkGetStringMacro(ScannerAddress);
+  vtkGetMacro(ScannerAddress, std::string);
 
   /*! BK scanner OEM port */
   vtkSetMacro(OemPort, unsigned short);
@@ -99,21 +91,12 @@ public:
   vtkGetStringMacro(OfflineTestingFilePath);
 
 protected:
-  static const char* KEY_PROBE_TYPE;
-  static const char* KEY_ORIGIN;
-  static const char* KEY_ANGLES;
-  static const char* KEY_BOUNDING_BOX;
-  static const char* KEY_DEPTHS;
-  static const char* KEY_LINEAR_WIDTH;
-
-  static const char* KEY_SPACING_X;
-  static const char* KEY_SPACING_Y;
 
   static const char* KEY_DEPTH;
   static const char* KEY_GAIN;
 
   // Size of the ultrasound image. Only used if ContinuousStreamingEnabled is true.
-  unsigned int UltrasoundWindowSize[2];
+  std::array<unsigned int, 2> UltrasoundWindowSize;
 
   //Parameter values recaived from the BK scanner.
   double StartLineX_m, StartLineY_m, StartLineAngle_rad, StartDepth_m, StopLineX_m, StopLineY_m, StopLineAngle_rad, StopDepth_m;
@@ -123,7 +106,7 @@ protected:
   int gain_percent;
 
   //Probe type of the connected probes
-  PROBE_TYPE probeTypePortA, probeTypePortB, probeTypePortC, probeTypePortM;
+  IGTLIO_PROBE_TYPE probeTypePortA, probeTypePortB, probeTypePortC, probeTypePortM;
 
   //The current probe port
   std::string probePort;
@@ -211,22 +194,22 @@ protected:
   // Calculate values for the OpenIGTLinkIO standard.
 
   /*! Sector origin relative to upper left corner of image in pixels */
-  std::vector<double> CalculateOrigin();
+  virtual std::vector<double> CalculateOrigin() override;
 
   /*! Probe sector angles relative to down, in radians.
    *  2 angles for 2D, and 4 for 3D probes.
    * For regular imaging with linear probes these will be 0 */
-  std::vector<double> CalculateAngles();
+  virtual std::vector<double> CalculateAngles() override;
 
   /*! Boundaries to cut away areas outside the US sector, in pixels.
    * 4 for 2D, and 6 for 3D. */
-  std::vector<double> CalculateBoundingBox();
+  virtual std::vector<double> CalculateBoundingBox() override;
 
   /*! Start, stop depth for the imaging, in mm. */
-  std::vector<double> CalculateDepths();
+  virtual std::vector<double> CalculateDepths() override;
 
   /*! Width of linear probe. */
-  double CalculateLinearWidth();
+  virtual double CalculateLinearWidth() override;
 
   //Utility functions
 
@@ -266,15 +249,14 @@ protected:
   /*! Angle between top of ultrasound sector and last line in sector, in radians. */
   double GetStopLineAngle();
 
-  /*! Calculate spaxing in x diraction, in mm. */
+  /*! Calculate spacing in x direction, in mm. */
   double GetSpacingX();
 
   /*! Calculate spacing in y direction, in mm. */
   double GetSpacingY();
 
   /*! Get probe type. */
-  PROBE_TYPE GetProbeType();
-
+  virtual IGTLIO_PROBE_TYPE GetProbeType() override;
 
   /*! Add OpenIGTLinkIO parameters to FrameFields. */
   PlusStatus AddParametersToFrameFields();
@@ -282,14 +264,14 @@ protected:
   /*! Read theOemClientReadBuffer into a string. Discards the ; at the end of the string */
   std::string ReadBufferIntoString();
 
-  /*! Remove doube quotes from a string. E.g. "testString" -> testString */
+  /*! Remove double quotes from a string. E.g. "testString" -> testString */
   std::string RemoveQuotationMarks(std::string inString);
 
   void SetProbeTypeForPort(std::string port, std::string probeTypeString);
 
   //Values read from the xml config file
   /*! BK scanner address */
-  char* ScannerAddress;
+  std::string ScannerAddress;
 
   /*! BK OEM port */
   unsigned short OemPort;
@@ -309,6 +291,9 @@ protected:
   // For internal storage of additional variables (to minimize the number of included headers)
   class vtkInternal;
   vtkInternal* Internal;
+
+  /// Container to hold calculated field values
+  PlusTrackedFrame::FieldMapType FrameFields;
 
 private:
   vtkPlusBkProFocusOemVideoSource(const vtkPlusBkProFocusOemVideoSource&);  // Not implemented.
