@@ -136,7 +136,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
   m_lastTimestamp = timestamp + m_timestampOffset;
   LOG_DEBUG("Frame: " << FrameNumber << ". Timestamp: " << m_lastTimestamp);
 
-  assert(length = m_samplesPerLine * m_transducerCount * sizeof(uint16_t) + 256); //frame + header and footer
+  assert(length == m_samplesPerLine * m_transducerCount * sizeof(uint16_t) + 256); //frame + header and footer
   uint16_t* frame = reinterpret_cast<uint16_t*>(data + 16);
   uint8_t* bModeBuffer = new uint8_t[m_samplesPerLine * m_transducerCount];
   const float logFactor = m_OutputKnee / std::log(1 + m_Knee);
