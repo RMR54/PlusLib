@@ -23,6 +23,10 @@ vtkStandardNewMacro(vtkPlusWinProbeVideoSource);
 void vtkPlusWinProbeVideoSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
+  os << indent << "MinValue: " << this->m_MinValue << std::endl;
+  os << indent << "MaxValue: " << this->m_MaxValue << std::endl;
+  os << indent << "LogLinearKnee: " << this->m_Knee << std::endl;
+  os << indent << "LogMax: " << this->m_OutputKnee << std::endl;
   os << indent << "TransducerID: " << this->m_transducerID << std::endl;
   os << indent << "Frozen: " << this->IsFrozen() << std::endl;
   os << indent << "Voltage: " << static_cast<unsigned>(this->GetVoltage()) << std::endl;
@@ -55,13 +59,11 @@ PlusStatus vtkPlusWinProbeVideoSource::ReadConfiguration(vtkXMLDataElement* root
   XML_READ_STRING_ATTRIBUTE_REQUIRED(TransducerID, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(float, TxTxFrequency, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(float, SSDepth, deviceConfig);
-  //XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(uint8_t, Voltage, deviceConfig);
-  //above macro is not defined for uint8_t, so we implement it manually below:
-  unsigned long tmpValue = 0;
-  if (deviceConfig->GetScalarAttribute("Voltage", tmpValue))
-  {
-    this->SetVoltage(tmpValue);
-  }
+  XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(unsigned long, Voltage, deviceConfig); //implicit type conversion
+  XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(unsigned long, MinValue, deviceConfig); //implicit type conversion
+  XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(unsigned long, MaxValue, deviceConfig); //implicit type conversion
+  XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(unsigned long, LogLinearKnee, deviceConfig); //implicit type conversion
+  XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(unsigned long, LogMax, deviceConfig); //implicit type conversion
 
   deviceConfig->GetVectorAttribute("TimeGainCompensation", 8, m_timeGainCompensation);
   deviceConfig->GetVectorAttribute("FocalPointDepth", 4, m_focalPointDepth);
@@ -78,6 +80,10 @@ PlusStatus vtkPlusWinProbeVideoSource::WriteConfiguration(vtkXMLDataElement* roo
   deviceConfig->SetFloatAttribute("TxTxFrequency", this->GetTxTxFrequency());
   deviceConfig->SetFloatAttribute("SSDepth", this->GetSSDepth());
   deviceConfig->SetUnsignedLongAttribute("Voltage", this->GetVoltage());
+  deviceConfig->SetUnsignedLongAttribute("MinValue", this->GetMinValue());
+  deviceConfig->SetUnsignedLongAttribute("MaxValue", this->GetMaxValue());
+  deviceConfig->SetUnsignedLongAttribute("LogLinearKnee", this->GetLogLinearKnee());
+  deviceConfig->SetUnsignedLongAttribute("LogMax", this->GetLogMax());
 
   deviceConfig->SetVectorAttribute("TimeGainCompensation", 8, m_timeGainCompensation);
   deviceConfig->SetVectorAttribute("FocalPointDepth", 4, m_focalPointDepth);
@@ -132,15 +138,37 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
 
   assert(length = m_samplesPerLine * m_transducerCount * sizeof(uint16_t) + 256); //frame + header and footer
   uint16_t* frame = reinterpret_cast<uint16_t*>(data + 16);
-  const float logFactor = 22.992952214167854304798799603468f; // =255/ln(2^16)
   uint8_t* bModeBuffer = new uint8_t[m_samplesPerLine * m_transducerCount];
+  const float logFactor = m_OutputKnee / std::log(1 + m_Knee);
 
   #pragma omp parallel for
   for (uint32_t t = 0; t < m_transducerCount; t++)
   {
     for (uint32_t s = 0; s < m_samplesPerLine; s++)
     {
-      bModeBuffer[s * m_transducerCount + t] = static_cast<uint8_t>(logFactor * std::log(float(1 + frame[t * m_samplesPerLine + s])));
+	  uint16_t val = frame[t*m_samplesPerLine + s];
+	  if (val <= m_MinValue) // subtract noise floor
+	  {
+		  val = 0;
+	  }
+	  else
+	  {
+		  val -= m_MinValue;
+	  }
+	  if (val > m_MaxValue) //apply ceiling
+	  {
+		  val = m_MaxValue;
+	  }
+	  float cVal;
+	  if (val < m_Knee)
+	  {
+		  cVal = logFactor * std::log(float(1 + val));
+	  }
+	  else //linear mapping
+	  {
+		  cVal = m_OutputKnee + (val - m_Knee) * float(255 - m_OutputKnee) / (m_MaxValue - m_Knee);
+	  }
+	  bModeBuffer[s*m_transducerCount + t] = static_cast<uint8_t>(cVal);
     }
   }
 
@@ -270,11 +298,11 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalDisconnect()
 //----------------------------------------------------------------------------
 void vtkPlusWinProbeVideoSource::Watchdog()
 {
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   while (this->Recording)
   {
     std::this_thread::sleep_for(std::chrono::milliseconds(15));
-    if (vtkPlusAccurateTimer::GetSystemTime() - m_lastTimestamp > 1.0)
+    if (vtkPlusAccurateTimer::GetSystemTime() - m_lastTimestamp > 0.2)
     {
       SetPendingRecreateTables(true);
       LOG_INFO("Called SetPendingRecreateTables");
@@ -304,9 +332,9 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
 
   m_timestampOffset = vtkPlusAccurateTimer::GetSystemTime();
   WPExecute();
-  if (sizeof(void*) == 4)  //32 bits
+  //if (sizeof(void*) == 4)  //32 bits
   {
-    m_watchdog32 = new std::thread(&vtkPlusWinProbeVideoSource::Watchdog, this);
+    m_watchdog = new std::thread(&vtkPlusWinProbeVideoSource::Watchdog, this);
   }
   return PLUS_SUCCESS;
 }
@@ -317,8 +345,8 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStopRecording()
   WPStopScanning();
   if (sizeof(void*) == 4)  //32 bits
   {
-    m_watchdog32->join();
-    delete m_watchdog32;
+    m_watchdog->join();
+    delete m_watchdog;
   }
 
   return PLUS_SUCCESS;

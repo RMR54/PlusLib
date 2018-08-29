@@ -87,6 +87,30 @@ public:
   /*! Gets GUID of the probe type to be used. */
   std::string GetTransducerID();
 
+  /*! Sets the noise floor for intensity range compression. */
+  void SetMinValue(const uint16_t minValue) { m_MinValue = minValue; }
+
+  /*! Gets the noise floor for intensity range compression. */
+  uint16_t GetMinValue() const { return m_MinValue; }
+
+  /*! Sets the typical high value for intensity range compression. */
+  void SetMaxValue(const uint16_t maxValue) { m_MaxValue = maxValue; }
+
+  /*! Gets the typical high value for intensity range compression. */
+  uint16_t GetMaxValue() const { return m_MaxValue; }
+
+  /*! Sets the threshold value for switching from log to linear mapping for intensity range compression. */
+  void SetLogLinearKnee(const uint16_t threshold) { m_Knee = threshold; }
+
+  /*! Gets the threshold value for switching from log to linear mapping for intensity range compression. */
+  uint16_t GetLogLinearKnee() const { return m_Knee; }
+
+  /*! Sets the maximum output value for log mapping of intensity range. */
+  void SetLogMax(const uint8_t threshold) { m_OutputKnee = threshold; }
+
+  /*! Gets the maximum output value for log mapping of intensity range. */
+  uint8_t GetLogMax() const { return m_OutputKnee; }
+
   static const uint32_t wraparoundTSC = 1e9;
 
 protected:
@@ -131,10 +155,14 @@ protected:
   uint32_t m_transducerCount = 128;
   uint32_t m_samplesPerLine = 512;
   PlusTrackedFrame::FieldMapType m_customFields;
-  std::thread* m_watchdog32 = nullptr;
+  std::thread* m_watchdog = nullptr;
   double m_lastTimestamp = 0.0; //for watchdog
   double m_timeGainCompensation[8];
   float m_focalPointDepth[4];
+  uint16_t m_MinValue = 16; //noise floor
+  uint16_t m_MaxValue = 16384; //maximum typical value
+  uint16_t m_Knee = 4096; // threshold value for switching from log to linear
+  uint8_t m_OutputKnee = 64; // log-linear knee in output range
 
 private:
   vtkPlusWinProbeVideoSource(const vtkPlusWinProbeVideoSource&);  // Not implemented
