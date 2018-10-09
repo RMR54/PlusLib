@@ -337,11 +337,15 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
 	if (focalDepthPoints > 1)
 	{
 		::SetBMultiTxCount(focalDepthPoints);
+		int32_t actual_foci = ::GetBMultiTxCount();
+		LOG_INFO("Number of points: " << actual_foci);
 	}
+
     for (int i = 0; i < 4; i++)
     {
         ::SetFocalPointDepth(i, m_focalPointDepth[i]);
         m_focalPointDepth[i] = ::GetFocalPointDepth(i);
+		LOG_INFO("Focal Point Depth set: " << m_focalPointDepth[i]);
     }
 	
     this->SetTxTxFrequency(m_frequency);
