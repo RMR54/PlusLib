@@ -245,7 +245,6 @@ vtkPlusWinProbeVideoSource::vtkPlusWinProbeVideoSource()
 	{
 		m_timeGainCompensation[i] = 0.0;
 	}
-
     for (int i = 0; i < 4; i++)
     {
         m_focalPointDepth[i] = 0.0f;
@@ -322,11 +321,29 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
         SetTGC(i, m_timeGainCompensation[i]);
         m_timeGainCompensation[i] = GetTGC(i);
     }
+	int32_t focalDepthPoints = 1;
+	for (int i = 1; i < 4; i++)
+	{
+		if (m_focalPointDepth[i] > 0)
+		{
+			focalDepthPoints++;
+		}
+		else
+		{
+			break;
+		}
+
+	}
+	if (focalDepthPoints > 1)
+	{
+		::SetBMultiTxCount(focalDepthPoints);
+	}
     for (int i = 0; i < 4; i++)
     {
         ::SetFocalPointDepth(i, m_focalPointDepth[i]);
         m_focalPointDepth[i] = ::GetFocalPointDepth(i);
     }
+	
     this->SetTxTxFrequency(m_frequency);
     this->SetVoltage(m_voltage);
     this->SetSSDepth(m_depth); //as a side-effect calls AdjustSpacing and AdjustBufferSize
