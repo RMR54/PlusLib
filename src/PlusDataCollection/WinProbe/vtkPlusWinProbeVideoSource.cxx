@@ -32,6 +32,7 @@ void vtkPlusWinProbeVideoSource::PrintSelf(ostream& os, vtkIndent indent)
     os << indent << "Voltage: " << static_cast<unsigned>(this->GetVoltage()) << std::endl;
     os << indent << "Frequency: " << this->GetTxTxFrequency() << std::endl;
     os << indent << "Depth: " << this->GetSSDepth() << std::endl;
+	os << indent << "SpatialCompounding: " << this->m_sscompounding << std::endl;
     for (int i = 0; i < 8; i++)
     {
         os << indent << "TGC" << i << ": " << m_timeGainCompensation[i] << std::endl;
@@ -64,6 +65,7 @@ PlusStatus vtkPlusWinProbeVideoSource::ReadConfiguration(vtkXMLDataElement* root
     XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(unsigned long, MaxValue, deviceConfig); //implicit type conversion
     XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(unsigned long, LogLinearKnee, deviceConfig); //implicit type conversion
     XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(unsigned long, LogMax, deviceConfig); //implicit type conversion
+	XML_READ_BOOL_ATTRIBUTE_OPTIONAL(SpatialCompounding, deviceConfig); //implicit type conversion
 
     deviceConfig->GetVectorAttribute("TimeGainCompensation", 8, m_timeGainCompensation);
     deviceConfig->GetVectorAttribute("FocalPointDepth", 4, m_focalPointDepth);
@@ -327,6 +329,17 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
         ::SetFocalPointDepth(i, m_focalPointDepth[i]);
         m_focalPointDepth[i] = ::GetFocalPointDepth(i);
     }
+	this->SetSCIsEnabled(m_sscompounding);
+	LOG_INFO("Set SC to"<< m_sscompounding);
+	if (m_sscompounding)
+	{
+		this->SetSCCompoundAngleCount(10);
+		int32_t sc_angle_count = ::GetSCCompoundAngleCount();
+		float sc_angle = ::GetSCCompoundAngle();
+		LOG_INFO("Set SC angle count to" << sc_angle_count);
+		LOG_INFO("Set SC angle to" << sc_angle);
+
+	}
     this->SetTxTxFrequency(m_frequency);
     this->SetVoltage(m_voltage);
     this->SetSSDepth(m_depth); //as a side-effect calls AdjustSpacing and AdjustBufferSize

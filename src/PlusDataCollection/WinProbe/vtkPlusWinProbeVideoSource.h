@@ -148,6 +148,7 @@ protected:
     float m_depth = 26.0; //mm
     float m_width = 38.1; //mm
     float m_frequency = 10.9; //MHz
+	bool m_sscompounding = false;
     uint8_t m_voltage = 40;
     std::string m_transducerID; //GUID
     double m_ADCfrequency = 60.0e6; //MHz
