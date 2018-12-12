@@ -220,8 +220,8 @@ int main (int argc, char* argv[])
         {
           LOG_INFO( "Probe moved to position: " << -5*i << "mm");
         }
-        vtkPlusAccurateTimer::GetInstance()->Delay(1); 
-        //vtkPlusAccurateTimer::Delay(1 + 0.001*samplingTimeMs); 
+        vtkIGSIOAccurateTimer::GetInstance()->Delay(1); 
+        //vtkIGSIOAccurateTimer::Delay(1 + 0.001*samplingTimeMs); 
       }
 
       for ( int i = 9; i >= 0; i-- )
@@ -236,8 +236,8 @@ int main (int argc, char* argv[])
         {
           LOG_INFO( "Probe moved to position: " << -5*i << "mm");
         }
-        vtkPlusAccurateTimer::GetInstance()->Delay(1); 
-        //vtkPlusAccurateTimer::Delay(1 + 0.001*samplingTimeMs); 
+        vtkIGSIOAccurateTimer::GetInstance()->Delay(1); 
+        //vtkIGSIOAccurateTimer::Delay(1 + 0.001*samplingTimeMs); 
       }
     }
 
@@ -257,7 +257,7 @@ int main (int argc, char* argv[])
         //return EXIT_FAILURE; 
       }
 
-      vtkPlusAccurateTimer::Delay(0.001*samplingTimeMs); 
+      vtkIGSIOAccurateTimer::Delay(0.001*samplingTimeMs); 
     }
 
     LOG_INFO( "Stopping stepper...\n");

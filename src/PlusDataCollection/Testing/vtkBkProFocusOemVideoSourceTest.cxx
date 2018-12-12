@@ -117,7 +117,7 @@ int main(int argc, char** argv)
       // a frame has been acquired
       break;
     }
-    vtkPlusAccurateTimer::Delay(0.1);
+    vtkIGSIOAccurateTimer::Delay(0.1);
   }
   if (videoSource->GetNumberOfItems() < 1)
   {

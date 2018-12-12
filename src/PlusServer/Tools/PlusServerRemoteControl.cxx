@@ -26,6 +26,7 @@ See License.txt for details.
 #ifdef PLUS_USE_STEALTHLINK
   #include "vtkPlusStealthLinkCommand.h"
 #endif
+#include <vtkNew.h>
 #include "vtksys/CommandLineArguments.hxx"
 #include "vtksys/Process.h"
 #include "vtkXMLUtilities.h"
@@ -352,13 +353,13 @@ PlusStatus ExecuteUpdateTransform(vtkPlusOpenIGTLinkClient* client,
   cmd->SetId(commandId);
   cmd->SetTransformName(transformName.c_str());
   double value = 0.0;
-  PlusCommon::StringToDouble(transformError.c_str(), value);
+  igsioCommon::StringToDouble(transformError.c_str(), value);
   cmd->SetTransformError(value);
   cmd->SetTransformDate(transformDate.c_str());
-  cmd->SetTransformPersistent(PlusCommon::IsEqualInsensitive(transformPersistent, "TRUE"));
+  cmd->SetTransformPersistent(igsioCommon::IsEqualInsensitive(transformPersistent, "TRUE"));
   std::vector<std::string> elems;
   vtkMatrix4x4* transformValueMatrix = vtkMatrix4x4::New();
-  PlusCommon::SplitStringIntoTokens(transformValue, ' ', elems);
+  igsioCommon::SplitStringIntoTokens(transformValue, ' ', elems);
   if (elems.size() != 16)
   {
     LOG_ERROR("Invalid formatting of matrix string.");
@@ -368,7 +369,7 @@ PlusStatus ExecuteUpdateTransform(vtkPlusOpenIGTLinkClient* client,
   {
     for (int j = 0; j < 4; j++)
     {
-      PlusCommon::StringToDouble((elems[i * 4 + j]).c_str(), value);
+      igsioCommon::StringToDouble((elems[i * 4 + j]).c_str(), value);
       transformValueMatrix->SetElement(i, j, value);
     }
   }
@@ -387,6 +388,17 @@ PlusStatus ExecuteGetTransform(vtkPlusOpenIGTLinkClient* client, const std::stri
   cmd->SetTransformName(transformName.c_str());
   PrintCommand(cmd);
   return client->SendCommand(cmd);
+}
+
+//----------------------------------------------------------------------------
+PlusStatus ExecuteGetPoint(vtkPlusOpenIGTLinkClient* client, const std::string& inputFilename)
+{
+  vtkNew<vtkPlusIgtlMessageFactory> factory;
+  igtl::MessageBase::Pointer msg = factory->CreateSendMessage("GET_POINT", IGTL_HEADER_VERSION_2);
+  msg->AllocateBuffer();
+  msg->SetMetaDataElement("Filename", IANA_TYPE_US_ASCII, inputFilename);
+  msg->Pack();
+  return client->SendMessage(msg);
 }
 
 //----------------------------------------------------------------------------
@@ -585,7 +597,7 @@ PlusStatus RunTests(vtkPlusOpenIGTLinkClient* client)
     }
     else
     {
-      if (!PlusCommon::IsEqualInsensitive(parameters["TrackedVideoStream"].second, "TrackedVideoStream"))
+      if (!igsioCommon::IsEqualInsensitive(parameters["TrackedVideoStream"].second, "TrackedVideoStream"))
       {
         LOG_ERROR("Incorrect parameter returned. Got: " << parameters["TrackedVideoStream"].second << ". Expected: \"TrackedVideoStream\"");
       }
@@ -610,7 +622,7 @@ PlusStatus RunTests(vtkPlusOpenIGTLinkClient* client)
     }
     else
     {
-      if (!PlusCommon::IsEqualInsensitive(parameters["VolumeReconstructorDevice"].second, "VolumeReconstructorDevice"))
+      if (!igsioCommon::IsEqualInsensitive(parameters["VolumeReconstructorDevice"].second, "VolumeReconstructorDevice"))
       {
         LOG_ERROR("Incorrect parameter returned.");
       }
@@ -638,55 +650,55 @@ PlusStatus RunTests(vtkPlusOpenIGTLinkClient* client)
   ExecuteStartAcquisition(client, captureDeviceId, capturingOutputFileName, false, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
   ExecuteSuspendAcquisition(client, captureDeviceId, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
   ExecuteResumeAcquisition(client, captureDeviceId, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
   ExecuteStopAcquisition(client, captureDeviceId, capturingOutputFileName, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
 
   // Volume reconstruction from file
   ExecuteReconstructFromFile(client, volumeReconstructionDeviceId, batchReconstructionInputFileName, batchReconstructionOutputFileName, batchReconstructionOutputImageName, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
 
   // Live volume reconstruction
   ExecuteStartReconstruction(client, volumeReconstructionDeviceId, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
   ExecuteSuspendReconstruction(client, volumeReconstructionDeviceId, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
   ExecuteResumeReconstruction(client, volumeReconstructionDeviceId, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
   ExecuteGetSnapshotReconstruction(client, volumeReconstructionDeviceId, snapshotReconstructionOutputFileName, snapshotReconstructionOutputImageName, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
   ExecuteGetSnapshotReconstruction(client, volumeReconstructionDeviceId, snapshotReconstructionOutputFileName, snapshotReconstructionOutputImageName, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
   ExecuteGetSnapshotReconstruction(client, volumeReconstructionDeviceId, snapshotReconstructionOutputFileName, snapshotReconstructionOutputImageName, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
   ExecuteStopReconstruction(client, volumeReconstructionDeviceId, liveReconstructionOutputFileName, liveReconstructionOutputImageName, commandId++);
   RETURN_IF_FAIL(ReceiveAndPrintReply(client, didTimeout, replyMessage, errorMessage, parameters));
   parameters.clear();
-  vtkPlusAccurateTimer::DelayWithEventProcessing(2.0);
+  vtkIGSIOAccurateTimer::DelayWithEventProcessing(2.0);
 
   return PLUS_SUCCESS;
 }
@@ -697,7 +709,6 @@ void SignalInterruptHandler(int s)
 {
   StopClientRequested = true;
 }
-
 
 //----------------------------------------------------------------------------
 int main(int argc, char** argv)
@@ -735,7 +746,7 @@ int main(int argc, char** argv)
   args.AddArgument("--host", vtksys::CommandLineArguments::EQUAL_ARGUMENT, &serverHost, "Host name of the OpenIGTLink server (default: 127.0.0.1)");
   args.AddArgument("--port", vtksys::CommandLineArguments::EQUAL_ARGUMENT, &serverPort, "Port address of the OpenIGTLink server (default: 18944)");
   args.AddArgument("--command", vtksys::CommandLineArguments::EQUAL_ARGUMENT, &command,
-                   "Command name to be executed on the server (START_ACQUISITION, STOP_ACQUISITION, SUSPEND_ACQUISITION, RESUME_ACQUISITION, RECONSTRUCT, START_RECONSTRUCTION, SUSPEND_RECONSTRUCTION, RESUME_RECONSTRUCTION, STOP_RECONSTRUCTION, GET_RECONSTRUCTION_SNAPSHOT, GET_CHANNEL_IDS, GET_DEVICE_IDS, GET_EXAM_DATA, SEND_TEXT, UPDATE_TRANSFORM, GET_TRANSFORM)");
+                   "Command name to be executed on the server (START_ACQUISITION, STOP_ACQUISITION, SUSPEND_ACQUISITION, RESUME_ACQUISITION, RECONSTRUCT, START_RECONSTRUCTION, SUSPEND_RECONSTRUCTION, RESUME_RECONSTRUCTION, STOP_RECONSTRUCTION, GET_RECONSTRUCTION_SNAPSHOT, GET_CHANNEL_IDS, GET_DEVICE_IDS, GET_EXAM_DATA, SEND_TEXT, UPDATE_TRANSFORM, GET_TRANSFORM, GET_POINT)");
   args.AddArgument("--command-id", vtksys::CommandLineArguments::EQUAL_ARGUMENT, &commandId, "Command ID to send to the server.");
   args.AddArgument("--server-igtl-version", vtksys::CommandLineArguments::EQUAL_ARGUMENT, &serverHeaderVersion, "The version of IGTL used by the server. Remove this parameter when querying is dynamic.");
   args.AddArgument("--device", vtksys::CommandLineArguments::EQUAL_ARGUMENT, &deviceId, "ID of the controlled device (optional, default: first VirtualStreamCapture or VirtualVolumeReconstructor device). In case of GET_DEVICE_IDS it is not an ID but a device type.");
@@ -813,71 +824,75 @@ int main(int argc, char** argv)
   {
     PlusStatus commandExecutionStatus = PLUS_SUCCESS;
     // Execute command
-    if (STRCASECMP(command.c_str(), "START_ACQUISITION") == 0)
+    if (igsioCommon::IsEqualInsensitive(command, "START_ACQUISITION"))
     {
       commandExecutionStatus = ExecuteStartAcquisition(client, deviceId, outputFilename, enableCompression, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "STOP_ACQUISITION") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "STOP_ACQUISITION"))
     {
       commandExecutionStatus = ExecuteStopAcquisition(client, deviceId, outputFilename, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "SUSPEND_ACQUISITION") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "SUSPEND_ACQUISITION"))
     {
       commandExecutionStatus = ExecuteSuspendAcquisition(client, deviceId, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "RESUME_ACQUISITION") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "RESUME_ACQUISITION"))
     {
       commandExecutionStatus = ExecuteResumeAcquisition(client, deviceId, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "START_RECONSTRUCTION") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "START_RECONSTRUCTION"))
     {
       commandExecutionStatus = ExecuteStartReconstruction(client, deviceId, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "SUSPEND_RECONSTRUCTION") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "SUSPEND_RECONSTRUCTION"))
     {
       commandExecutionStatus = ExecuteSuspendReconstruction(client, deviceId, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "RESUME_RECONSTRUCTION") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "RESUME_RECONSTRUCTION"))
     {
       commandExecutionStatus = ExecuteResumeReconstruction(client, deviceId, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "GET_RECONSTRUCTION_SNAPSHOT") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "GET_RECONSTRUCTION_SNAPSHOT"))
     {
       commandExecutionStatus = ExecuteGetSnapshotReconstruction(client, deviceId, outputFilename, outputImageName, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "STOP_RECONSTRUCTION") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "STOP_RECONSTRUCTION"))
     {
       commandExecutionStatus = ExecuteStopReconstruction(client, deviceId, outputFilename, outputImageName, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "RECONSTRUCT") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "RECONSTRUCT"))
     {
       commandExecutionStatus = ExecuteReconstructFromFile(client, deviceId, inputFilename, outputFilename, outputImageName, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "GET_CHANNEL_IDS") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "GET_CHANNEL_IDS"))
     {
       commandExecutionStatus = ExecuteGetChannelIds(client, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "GET_DEVICE_IDS") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "GET_DEVICE_IDS"))
     {
       commandExecutionStatus = ExecuteGetDeviceIds(client, deviceId /* actually a device type */, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "UPDATE_TRANSFORM") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "UPDATE_TRANSFORM"))
     {
       commandExecutionStatus = ExecuteUpdateTransform(client, transformName, transformValue, transformError, transformDate, transformPersistent, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "SAVE_CONFIG") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "SAVE_CONFIG"))
     {
       commandExecutionStatus = ExecuteSaveConfig(client, outputFilename, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "SEND_TEXT") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "SEND_TEXT"))
     {
       commandExecutionStatus = ExecuteSendText(client, deviceId, text, responseExpected, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "GET_TRANSFORM") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "GET_TRANSFORM"))
     {
       commandExecutionStatus = ExecuteGetTransform(client, transformName, commandId);
     }
-    else if (STRCASECMP(command.c_str(), "GET_EXAM_DATA") == 0)
+    else if (igsioCommon::IsEqualInsensitive(command, "GET_POINT"))
+    {
+      commandExecutionStatus = ExecuteGetPoint(client, inputFilename);
+    }
+    else if (igsioCommon::IsEqualInsensitive(command, "GET_EXAM_DATA"))
     {
 #ifdef PLUS_USE_STEALTHLINK
       commandExecutionStatus = ExecuteGetExamData(client, deviceId, dicomOutputDirectory, volumeEmbeddedTransformToFrame, keepReceivedDicomFiles, commandId);
@@ -937,7 +952,7 @@ int main(int argc, char** argv)
     while (!StopClientRequested)
     {
       // the customized client logs the transformation matrices in the data receiver thread
-      vtkPlusAccurateTimer::DelayWithEventProcessing(commandQueuePollIntervalSec);
+      vtkIGSIOAccurateTimer::DelayWithEventProcessing(commandQueuePollIntervalSec);
     }
   }
 

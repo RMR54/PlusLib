@@ -33,6 +33,7 @@ SET(${PROJECT_NAME}_INCLUDE_DIRS
 # Build the library
 SET(${PROJECT_NAME}_LIBS
   vtkPlusCommon
+  vtkIGSIOCommon
   OpenIGTLink
   igtlioConverter
   )
@@ -44,6 +45,7 @@ FOREACH(p IN LISTS ${PROJECT_NAME}_INCLUDE_DIRS)
 ENDFOREACH()
 target_include_directories(vtk${PROJECT_NAME} PUBLIC $<INSTALL_INTERFACE:${PLUSLIB_INCLUDE_INSTALL}>)
 TARGET_LINK_LIBRARIES(vtk${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_LIBS})
+PlusLibAddVersionInfo(vtk${PROJECT_NAME} "Library containing utility and wrapper functionality for interacting with the OpenIGTLink standard. Part of the Plus toolkit." vtk${PROJECT_NAME} vtk${PROJECT_NAME})
 
 # --------------------------------------------------------------------------
 # Set external MS project

@@ -65,9 +65,9 @@ IF(PLUS_USE_MMF_VIDEO)
   OPTION(PLUS_TEST_MMF_VIDEO "Enable testing of acquisition from MMF video device (webcam). Enable this only if an MMF device is connected to this computer." OFF)
 ENDIF()
 
-OPTION(PLUS_USE_tesseract "Provide support for optical character recognition virtual device via tesseract OCR library." OFF)
-IF(PLUS_USE_tesseract)
-  OPTION(PLUS_TEST_tesseract "Enable testing functionality for tesseract virtual recognizer device." ON)
+OPTION(PLUS_USE_TextRecognizer "Provide support for optical character recognition virtual device via tesseract OCR library." OFF)
+IF(PLUS_USE_TextRecognizer)
+  OPTION(PLUS_TEST_TextRecognizer "Enable testing functionality for tesseract virtual recognizer device." ON)
 ENDIF()
 
 OPTION(PLUS_USE_OpenCV "Provide support for optical marker tracking and other features using OpenCV." OFF)
@@ -98,13 +98,6 @@ SET(PLUSLIB_DEPENDENCIES ${PLUSLIB_DEPENDENCIES} vtkPlusHaptics CACHE INTERNAL "
 
 # --------------------------------------------------------------------------
 # Sources
-SET(${PROJECT_NAME}_SRCS
-  FakeTracking/vtkPlusFakeTracker.cxx
-  SavedDataSource/vtkPlusSavedDataSource.cxx
-  ImageProcessor/vtkPlusImageProcessorVideoSource.cxx
-  UsSimulatorVideo/vtkPlusUsSimulatorVideoSource.cxx
-  )
-
 SET(Common_SRCS
   vtkPlusDataCollector.cxx
   vtkPlusDevice.cxx
@@ -121,14 +114,20 @@ SET(Common_SRCS
   vtkPlusBuffer.cxx
   vtkPlusUsImagingParameters.cxx
   )
-
 SET(Virtual_SRCS
   VirtualDevices/vtkPlusVirtualMixer.cxx
   VirtualDevices/vtkPlusVirtualSwitcher.cxx
   VirtualDevices/vtkPlusVirtualCapture.cxx
   VirtualDevices/vtkPlusVirtualVolumeReconstructor.cxx
   )
-IF(PLUS_USE_tesseract)
+SET(Miscellaneous_SRCS
+  FakeTracking/vtkPlusFakeTracker.cxx
+  SavedDataSource/vtkPlusSavedDataSource.cxx
+  ImageProcessor/vtkPlusImageProcessorVideoSource.cxx
+  UsSimulatorVideo/vtkPlusUsSimulatorVideoSource.cxx
+  )
+
+IF(PLUS_USE_TextRecognizer)
   CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/VirtualDevices/tesseractDataDir.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/VirtualDevices/tesseractDataDir.h
@@ -141,16 +140,10 @@ ENDIF()
 LIST(APPEND ${PROJECT_NAME}_SRCS
   ${Common_SRCS}
   ${Virtual_SRCS}
+  ${Miscellaneous_SRCS}
   )
 
 IF(MSVC OR ${CMAKE_GENERATOR} MATCHES "Xcode")
-  SET(${PROJECT_NAME}_HDRS
-    FakeTracking/vtkPlusFakeTracker.h
-    SavedDataSource/vtkPlusSavedDataSource.h
-    ImageProcessor/vtkPlusImageProcessorVideoSource.h
-    UsSimulatorVideo/vtkPlusUsSimulatorVideoSource.h
-    )
-
   SET(Common_HDRS
     vtkPlusDataCollector.h
     vtkPlusDevice.h
@@ -167,13 +160,19 @@ IF(MSVC OR ${CMAKE_GENERATOR} MATCHES "Xcode")
     vtkPlusBuffer.h
     vtkPlusUsImagingParameters.h
     )
+  SET(Miscellaneous_HDRS
+    FakeTracking/vtkPlusFakeTracker.h
+    SavedDataSource/vtkPlusSavedDataSource.h
+    ImageProcessor/vtkPlusImageProcessorVideoSource.h
+    UsSimulatorVideo/vtkPlusUsSimulatorVideoSource.h
+    )
   SET(Virtual_HDRS
     VirtualDevices/vtkPlusVirtualMixer.h
     VirtualDevices/vtkPlusVirtualSwitcher.h
     VirtualDevices/vtkPlusVirtualCapture.h
     VirtualDevices/vtkPlusVirtualVolumeReconstructor.h
     )
-  IF(PLUS_USE_tesseract)
+  IF(PLUS_USE_TextRecognizer)
     LIST(APPEND Virtual_HDRS VirtualDevices/vtkPlusVirtualTextRecognizer.h)
   ENDIF()
 ENDIF()
@@ -181,6 +180,7 @@ ENDIF()
 LIST(APPEND ${PROJECT_NAME}_HDRS
   ${Common_HDRS}
   ${Virtual_HDRS}
+  ${Miscellaneous_HDRS}
   )
 
 SET(${PROJECT_NAME}_INSTALL_INCLUDE_FILES)
@@ -197,7 +197,7 @@ SET(${PROJECT_NAME}_INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR}/VirtualDevices
   CACHE INTERNAL "" FORCE)
 
-IF(PLUS_USE_tesseract)
+IF(PLUS_USE_TextRecognizer)
   LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS  
     ${CMAKE_CURRENT_BINARY_DIR}/VirtualDevices
     )
@@ -209,7 +209,7 @@ IF(PLUS_USE_OPTITRACK)
   SET(OptiTrack_SRCS
     OptiTrack/vtkPlusOptiTrack.cxx
     )
-
+    
   IF(MSVC OR ${CMAKE_GENERATOR} MATCHES "Xcode")
     SET(OptiTrack_HDRS
       OptiTrack/vtkPlusOptiTrack.h
@@ -224,21 +224,50 @@ IF(PLUS_USE_OPTITRACK)
     ${OptiTrack_SRCS}
     )
 
+  # Collect all the MotiveAPI libraries
+  SET(PLATFORM_NAME_SUFFIX "")
+  SET(LIBRARIES_PATH_SUFFIX "lib32/")
+  IF (CMAKE_HOST_WIN32 AND CMAKE_CL_64 )
+    SET(PLATFORM_NAME_SUFFIX "x64")
+    SET(LIBRARIES_PATH_SUFFIX "")
+  ENDIF ()
+
+  LIST(APPEND OPTITRACK_MOTIVE_API_STATIC_LIBS
+    ${OPTITRACK_MOTIVE_DIR}/lib/NPTrackingTools${PLATFORM_NAME_SUFFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}
+    )
+  
+  LIST(APPEND OPTITRACK_MOTIVE_API_SHARED_LIBS
+    ${OPTITRACK_MOTIVE_DIR}/lib/NPTrackingTools${PLATFORM_NAME_SUFFIX}${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${OPTITRACK_MOTIVE_DIR}/${LIBRARIES_PATH_SUFFIX}avcodec-56${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${OPTITRACK_MOTIVE_DIR}/${LIBRARIES_PATH_SUFFIX}avformat-56${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${OPTITRACK_MOTIVE_DIR}/${LIBRARIES_PATH_SUFFIX}avutil-54${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${OPTITRACK_MOTIVE_DIR}/${LIBRARIES_PATH_SUFFIX}libiomp5md${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${OPTITRACK_MOTIVE_DIR}/${LIBRARIES_PATH_SUFFIX}swscale-3${CMAKE_SHARED_LIBRARY_SUFFIX}
+    )
+
+  mark_as_advanced(MOTIVE_API_STATIC_LIBS)
+  mark_as_advanced(MOTIVE_API_SHARED_LIBS)
+
   LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/OptiTrack
     ${OPTITRACK_MOTIVE_INCLUDE_DIR}
     ${OPTITRACK_NATNET_INCLUDE_DIR}
     )
-
+    
   LIST(APPEND ${PROJECT_NAME}_LIBS
-    ${OPTITRACK_MOTIVE_LIBRARY_DIR}/${OPTITRACK_MOTIVE_LIBRARY_NAME}
+    ${OPTITRACK_MOTIVE_API_STATIC_LIBS}
     ${OPTITRACK_NATNET_LIBRARY_DIR}/NatNetLib${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
-
+  
+  LIST(APPEND External_Libraries_Debug
+    ${OPTITRACK_MOTIVE_DIR}/${LIBRARIES_PATH_SUFFIX}Qt5Core${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${OPTITRACK_MOTIVE_DIR}/${LIBRARIES_PATH_SUFFIX}Qt5Gui${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${OPTITRACK_MOTIVE_DIR}/${LIBRARIES_PATH_SUFFIX}Qt5Widgets${CMAKE_SHARED_LIBRARY_SUFFIX}
+    )
+    
   LIST(APPEND External_Libraries_Install
-    ${OPTITRACK_MOTIVE_BINARY_DIR}/${OPTITRACK_MOTIVE_BINARY_NAME}
+    ${OPTITRACK_MOTIVE_API_SHARED_LIBS}
     ${OPTITRACK_NATNET_BINARY_DIR}/NatNetLib${CMAKE_SHARED_LIBRARY_SUFFIX}
-    ${OPTITRACK_OPENMP_DIR}/libiomp5md${CMAKE_SHARED_LIBRARY_SUFFIX}
     )
 
   IF (OPTITRACK_MSVC80_OPENMP_DIR)
@@ -418,8 +447,7 @@ IF(PLUS_USE_MICRONTRACKER)
 
   IF(EXISTS "${MicronTracker_BINARY_DIR}/FlyCapture2${CMAKE_SHARED_LIBRARY_SUFFIX}")
     # MicronTracker 3.7.x
-    SET(External_Libraries_Install ${External_Libraries_Install}
-      ${MicronTracker_BINARY_DIR}/digiclops${CMAKE_SHARED_LIBRARY_SUFFIX}
+    LIST(APPEND External_Libraries_Install
       ${MicronTracker_BINARY_DIR}/FlyCapture2${CMAKE_SHARED_LIBRARY_SUFFIX}
       ${MicronTracker_BINARY_DIR}/FlyCapture2_C${CMAKE_SHARED_LIBRARY_SUFFIX}
       ${MicronTracker_BINARY_DIR}/libiomp5md${CMAKE_SHARED_LIBRARY_SUFFIX}
@@ -427,20 +455,37 @@ IF(PLUS_USE_MICRONTRACKER)
       ${MicronTracker_BINARY_DIR}/PGRFlyCapture${CMAKE_SHARED_LIBRARY_SUFFIX}
       ${MicronTracker_BINARY_DIR}/triclops${CMAKE_SHARED_LIBRARY_SUFFIX}
       )
+    IF(EXISTS ${MicronTracker_BINARY_DIR}/digiclops${CMAKE_SHARED_LIBRARY_SUFFIX})
+      LIST(APPEND External_Libraries_Install
+        ${MicronTracker_BINARY_DIR}/digiclops${CMAKE_SHARED_LIBRARY_SUFFIX}
+        )
+    ENDIF()
+    IF(EXISTS ${MicronTracker_BINARY_DIR}/triclops${CMAKE_SHARED_LIBRARY_SUFFIX})
+      LIST(APPEND External_Libraries_Install
+        ${MicronTracker_BINARY_DIR}/triclops${CMAKE_SHARED_LIBRARY_SUFFIX}
+        )
+    ENDIF()
   ELSE()
     # MicronTracker 3.6.x
-    SET(External_Libraries_Install ${External_Libraries_Install}
+    LIST(APPEND External_Libraries_Install
       ${MicronTracker_BINARY_DIR}/MTC${CMAKE_SHARED_LIBRARY_SUFFIX}
-      ${MicronTracker_BINARY_DIR}/Windist/digiclops${CMAKE_SHARED_LIBRARY_SUFFIX}
       ${MicronTracker_BINARY_DIR}/Windist/PGRFlyCapture${CMAKE_SHARED_LIBRARY_SUFFIX}
-      ${MicronTracker_BINARY_DIR}/Windist/triclops${CMAKE_SHARED_LIBRARY_SUFFIX}
       )
+    IF(EXISTS ${MicronTracker_BINARY_DIR}/Windist/digiclops${CMAKE_SHARED_LIBRARY_SUFFIX})
+      LIST(APPEND External_Libraries_Install
+        ${MicronTracker_BINARY_DIR}/Windist/digiclops${CMAKE_SHARED_LIBRARY_SUFFIX}
+        )
+    ENDIF()
+    IF(EXISTS ${MicronTracker_BINARY_DIR}/Windist/triclops${CMAKE_SHARED_LIBRARY_SUFFIX})
+      LIST(APPEND External_Libraries_Install
+        ${MicronTracker_BINARY_DIR}/Windist/triclops${CMAKE_SHARED_LIBRARY_SUFFIX}
+        )
+    ENDIF()
   ENDIF()
 ENDIF()
 
 #--------------------------------------------------------------------------
-#OpenHaptics support
-
+# OpenHaptics support
 IF(PLUS_USE_OPENHAPTICS)
   FIND_PACKAGE(OpenHaptics REQUIRED)
 
@@ -791,7 +836,9 @@ IF( PLUS_USE_Ascension3DG )
 
   LIST(APPEND ${PROJECT_NAME}_LIBS Ascension3DG)
   LIST(APPEND External_Libraries_Install ${Ascension3DG_SHARED_LIB_FILE})
-  SET(External_Libraries_Static_Install ${External_Libraries_Static_Install} ${Ascension3DG_LIB_FILE})
+  LIST(APPEND External_Libraries_Static_Install 
+    ${Ascension3DG_LIB_FILE}
+    )
   SET_PROPERTY(TARGET Ascension3DG PROPERTY IMPORTED_IMPLIB ${Ascension3DG_LIB_FILE})
   SET_PROPERTY(TARGET Ascension3DG PROPERTY IMPORTED_LOCATION ${Ascension3DG_SHARED_LIB_FILE})
 ENDIF()
@@ -1451,16 +1498,21 @@ IF(PLUS_USE_WINPROBE_VIDEO)
 
   LIST(APPEND ${PROJECT_NAME}_LIBS
     ${WINPROBESDK_DIR}/${Bitness}/$<$<CONFIG:Debug>:Debug>$<$<NOT:$<CONFIG:Debug>>:Release>/UltraVisionManagedDll${CMAKE_STATIC_LIBRARY_SUFFIX}
+    ${WINPROBESDK_DIR}/${Bitness}/$<$<CONFIG:Debug>:Debug>$<$<NOT:$<CONFIG:Debug>>:Release>/UltraVisionManagedDXDll${CMAKE_STATIC_LIBRARY_SUFFIX}
     )
   LIST(APPEND External_Libraries_Install
     ${WINPROBESDK_DIR}/${Bitness}/Release/UltraVisionManagedDll${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${WINPROBESDK_DIR}/${Bitness}/Release/UltraVisionManagedDXDll${CMAKE_SHARED_LIBRARY_SUFFIX}
     ${WINPROBESDK_DIR}/${Bitness}/Release/UltraVisionWrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${WINPROBESDK_DIR}/${Bitness}/Release/UltraVision.DXWrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
     ${WinProbeAssemblies}
     ${WinProbeXMLFiles}
     )
   LIST(APPEND External_Libraries_Debug
     ${WINPROBESDK_DIR}/${Bitness}/Debug/UltraVisionManagedDll${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${WINPROBESDK_DIR}/${Bitness}/Debug/UltraVisionManagedDXDll${CMAKE_SHARED_LIBRARY_SUFFIX}
     ${WINPROBESDK_DIR}/${Bitness}/Debug/UltraVisionWrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
+    ${WINPROBESDK_DIR}/${Bitness}/Debug/UltraVision.DXWrapper${CMAKE_SHARED_LIBRARY_SUFFIX}
     ${WinProbeAssemblies}
     ${WinProbeXMLFiles}
     )
@@ -1747,14 +1799,13 @@ ENDIF()
 
 # --------------------------------------------------------------------------
 # Try to find tesseract
-IF(PLUS_USE_tesseract)
+IF(PLUS_USE_TextRecognizer)
   FIND_PACKAGE(tesseract NO_MODULE REQUIRED)
 
   LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS
     ${tesseract_INCLUDE_DIRS}
     )
-
-  LIST(APPEND ${PROJECT_NAME}_LIBS
+  LIST(APPEND ${PROJECT_NAME}_PRIVATE_LIBS
     ${tesseract_LIBRARIES}
     ${PlusZLib}
     vtkpng
@@ -1841,7 +1892,7 @@ IF(PLUS_USE_NVIDIA_DVP)
     QuadroSDI
     ${OPENGL_LIBRARIES}
     )
-  SET(External_Libraries_Static_Install ${External_Libraries_Static_Install}
+  LIST(APPEND External_Libraries_Static_Install
     "${QuadroSDI_LIBRARY_DIR}/nvapi64${CMAKE_STATIC_LIBRARY_SUFFIX}"
     "${QuadroSDI_LIBRARY_DIR}/nvapi${CMAKE_STATIC_LIBRARY_SUFFIX}"
     "${QuadroSDI_LIBRARY_DIR}/ANCapi${CMAKE_STATIC_LIBRARY_SUFFIX}"
@@ -2059,6 +2110,7 @@ ENDIF()
 LIST(APPEND ${PROJECT_NAME}_LIBS
   vtkPlusRendering
   vtkPlusCommon
+  vtkIGSIOCommon
   vtkPlusUsSimulator
   vtkPlusVolumeReconstruction
   vtkPlusImageProcessing
@@ -2076,6 +2128,7 @@ FOREACH(p IN LISTS ${PROJECT_NAME}_INCLUDE_DIRS)
   target_include_directories(vtk${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${p}>)
 ENDFOREACH()
 target_include_directories(vtk${PROJECT_NAME} PUBLIC $<INSTALL_INTERFACE:${PLUSLIB_INCLUDE_INSTALL}>)
+PlusLibAddVersionInfo(vtk${PROJECT_NAME} "Library for interacting with virtual and hardware devices for data collection. Part of the Plus toolkit." vtk${PROJECT_NAME} vtk${PROJECT_NAME})
 
 IF(OpenCL_FOUND)
   # Enable downstream targets to use/link this device
@@ -2090,7 +2143,8 @@ IF(MSVC)
   target_compile_options(vtk${PROJECT_NAME} PRIVATE /MP)
 ENDIF()
 
-TARGET_LINK_LIBRARIES(vtk${PROJECT_NAME} ${${PROJECT_NAME}_LIBS})
+TARGET_LINK_LIBRARIES(vtk${PROJECT_NAME} PUBLIC ${${PROJECT_NAME}_LIBS})
+TARGET_LINK_LIBRARIES(vtk${PROJECT_NAME} PRIVATE ${${PROJECT_NAME}_PRIVATE_LIBS})
 
 # --------------------------------------------------------------------------
 # Source groups
@@ -2113,6 +2167,7 @@ source_group("ICCapturing" FILES ${ICCapturing_HDRS} ${ICCapturing_SRCS})
 source_group("BKProFocus" FILES ${BKProFocus_HDRS} ${BKProFocus_SRCS})
 source_group("Ultrasonix" FILES ${Ultrasonix_HDRS} ${Ultrasonix_SRCS})
 source_group("MicrochipMARG" FILES ${MicrochipMARG_HDRS} ${MicrochipMARG_SRCS})
+source_group("Miscellaneous" FILES ${Miscellaneous_HDRS} ${Miscellaneous_SRCS})
 source_group("ChRobotics" FILES ${ChRobotics_HDRS} ${ChRobotics_SRCS})
 source_group("3dConnexion" FILES ${3dConnexion_HDRS} ${3dConnexion_SRCS})
 source_group("PhidgetSpatial" FILES ${PhidgetSpatial_HDRS} ${PhidgetSpatial_SRCS})
@@ -2123,6 +2178,7 @@ source_group("BrachyTracker" FILES ${BrachyTracker_HDRS} ${BrachyTracker_SRCS})
 source_group("IntelRealSense" FILES ${IntelRealSense_HDRS} ${IntelRealSense_SRCS})
 source_group("MicronTracking" FILES ${MicronTracking_HDRS} ${MicronTracking_SRCS})
 source_group("NDICAPI" FILES ${NDICAPI_HDRS} ${NDICAPI_SRCS})
+source_group("Atracsys" FILES ${Atracsys_HDRS} ${Atracsys_SRCS})
 source_group("NDICertus" FILES ${NDICertus_HDRS} ${NDICertus_SRCS})
 source_group("Optimet" FILES ${Optimet_HDRS} ${Optimet_SRCS})
 source_group("OptiTrack" FILES ${OptiTrack_HDRS} ${OptiTrack_SRCS})

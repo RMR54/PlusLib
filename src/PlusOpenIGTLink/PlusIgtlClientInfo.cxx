@@ -103,7 +103,7 @@ PlusStatus PlusIgtlClientInfo::SetClientInfoFromXmlData(vtkXMLDataElement* xmlda
         continue;
       }
 
-      PlusTransformName tName;
+      igsioTransformName tName;
       if (tName.SetTransformName(name) != PLUS_SUCCESS)
       {
         LOG_WARNING("Invalid transform name: " << name);
@@ -141,25 +141,23 @@ PlusStatus PlusIgtlClientInfo::SetClientInfoFromXmlData(vtkXMLDataElement* xmlda
         continue;
       }
 
-      std::string encodingFourCC;
-      XML_READ_STRING_ATTRIBUTE_NONMEMBER_OPTIONAL(EncodingFourCC, encodingFourCC, imageElem);
-
-      bool encodingLossless = true;
-      XML_READ_BOOL_ATTRIBUTE_NONMEMBER_OPTIONAL(EncodingLossless, encodingLossless, imageElem);
-
-      int encodingMinKeyframeDistance = 50;
-      XML_READ_SCALAR_ATTRIBUTE_NONMEMBER_OPTIONAL(int, EncodingMinKeyframeDistance, encodingMinKeyframeDistance, imageElem);
-
-      int encodingMaxKeyframeDistance = 50; // TODO: Currently non functional
-      XML_READ_SCALAR_ATTRIBUTE_NONMEMBER_OPTIONAL(int, EncodingMaxKeyframeDistance, encodingMaxKeyframeDistance, imageElem);
-
       ImageStream stream;
       stream.EmbeddedTransformToFrame = embeddedTransformToFrame;
       stream.Name = name;
-      stream.VideoParameters.EncodingFourCC = encodingFourCC;
-      stream.VideoParameters.EncodingLossless = encodingLossless;
-      stream.VideoParameters.EncodingMinKeyframeDistance = encodingMinKeyframeDistance;
-      stream.VideoParameters.EncodingMaxKeyframeDistance = encodingMaxKeyframeDistance;
+
+      XML_FIND_NESTED_ELEMENT_OPTIONAL(encodingElem, imageElem, "Encoding");
+      if (encodingElem)
+      {
+        XML_READ_STRING_ATTRIBUTE_NONMEMBER_REQUIRED(FourCC, stream.EncodeVideoParameters.FourCC, encodingElem);
+        XML_READ_STRING_ATTRIBUTE_NONMEMBER_OPTIONAL(RateControl, stream.EncodeVideoParameters.RateControl, encodingElem);
+        XML_READ_STRING_ATTRIBUTE_NONMEMBER_OPTIONAL(DeadlineMode, stream.EncodeVideoParameters.DeadlineMode, encodingElem);
+        XML_READ_BOOL_ATTRIBUTE_NONMEMBER_OPTIONAL(Lossless, stream.EncodeVideoParameters.Lossless, encodingElem);
+        XML_READ_SCALAR_ATTRIBUTE_NONMEMBER_OPTIONAL(int, MinKeyframeDistance, stream.EncodeVideoParameters.MinKeyframeDistance, encodingElem);
+        XML_READ_SCALAR_ATTRIBUTE_NONMEMBER_OPTIONAL(int, MaxKeyframeDistance, stream.EncodeVideoParameters.MaxKeyframeDistance, encodingElem);
+        XML_READ_SCALAR_ATTRIBUTE_NONMEMBER_OPTIONAL(int, Speed, stream.EncodeVideoParameters.Speed, encodingElem);
+        XML_READ_SCALAR_ATTRIBUTE_NONMEMBER_OPTIONAL(int, TargetBitrate, stream.EncodeVideoParameters.TargetBitrate, encodingElem);
+      }
+
       clientInfo.ImageStreams.push_back(stream);
     }
   }
@@ -262,7 +260,7 @@ void PlusIgtlClientInfo::GetClientInfoInXmlData(std::string& strXmlData)
   xmldata->AddNestedElement(imageNames);
 
   std::ostringstream os;
-  PlusCommon::XML::PrintXML(os, vtkIndent(0), xmldata);
+  igsioCommon::XML::PrintXML(os, vtkIndent(0), xmldata);
   strXmlData = os.str();
 }
 

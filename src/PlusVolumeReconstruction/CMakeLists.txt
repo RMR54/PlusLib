@@ -31,6 +31,7 @@ SET(${PROJECT_NAME}_INCLUDE_DIRS
 # Build the library
 SET(${PROJECT_NAME}_LIBS
   vtkPlusCommon
+  vtkIGSIOCommon
   vtkInteractionStyle
   vtkRenderingFreeType
   vtkRendering${VTK_RENDERING_BACKEND}
@@ -44,6 +45,7 @@ FOREACH(p IN LISTS ${PROJECT_NAME}_INCLUDE_DIRS)
 ENDFOREACH()
 target_include_directories(vtk${PROJECT_NAME} PUBLIC $<INSTALL_INTERFACE:${PLUSLIB_INCLUDE_INSTALL}>)
 TARGET_LINK_LIBRARIES(vtk${PROJECT_NAME} ${${PROJECT_NAME}_LIBS})
+PlusLibAddVersionInfo(vtk${PROJECT_NAME} "Library for performing volume reconstruction of image series. Part of the Plus toolkit." vtk${PROJECT_NAME} vtk${PROJECT_NAME})
 
 # --------------------------------------------------------------------------
 # Set external MS project
@@ -55,7 +57,9 @@ SET(vcProj_vtk${PROJECT_NAME} vtk${PROJECT_NAME};${PlusLib_BINARY_DIR}/src/${PRO
 IF(PLUSBUILD_BUILD_PlusLib_TOOLS)
   ADD_EXECUTABLE(VolumeReconstructor Tools/VolumeReconstructor.cxx )
   SET_TARGET_PROPERTIES(VolumeReconstructor PROPERTIES FOLDER Tools)
-  TARGET_LINK_LIBRARIES(VolumeReconstructor vtkPlusVolumeReconstruction )
+  TARGET_LINK_LIBRARIES(VolumeReconstructor 
+    vtkPlusVolumeReconstruction
+    )
   GENERATE_HELP_DOC(VolumeReconstructor)
 
   ADD_EXECUTABLE(CreateSliceModels Tools/CreateSliceModels.cxx )
@@ -72,11 +76,19 @@ IF(PLUSBUILD_BUILD_PlusLib_TOOLS)
   ADD_EXECUTABLE(CompareVolumes Tools/CompareVolumes.cxx Tools/vtkPlusCompareVolumes.cxx )
   SET_TARGET_PROPERTIES(CompareVolumes PROPERTIES FOLDER Tools)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Tools)
-  TARGET_LINK_LIBRARIES(CompareVolumes vtkPlusCommon vtkIOLegacy vtkImagingMath vtkImagingStatistics)
+  TARGET_LINK_LIBRARIES(CompareVolumes 
+    vtkPlusCommon 
+    vtkIOLegacy 
+    vtkImagingMath 
+    vtkImagingStatistics
+    )
 
   ADD_EXECUTABLE(DrawClipRegion Tools/DrawClipRegion.cxx )
   SET_TARGET_PROPERTIES(DrawClipRegion PROPERTIES FOLDER Tools)
-  TARGET_LINK_LIBRARIES( DrawClipRegion vtkPlusCommon vtkPlusVolumeReconstruction)
+  TARGET_LINK_LIBRARIES(DrawClipRegion 
+    vtkPlusCommon 
+    vtkPlusVolumeReconstruction
+    )
   GENERATE_HELP_DOC(DrawClipRegion)
 
   INSTALL(

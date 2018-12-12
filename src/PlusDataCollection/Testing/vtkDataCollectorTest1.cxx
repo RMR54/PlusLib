@@ -11,7 +11,7 @@ See License.txt for details.
 
 // Local includes
 #include "PlusConfigure.h"
-#include "PlusTrackedFrame.h"
+//#include "igsioTrackedFrame.h"
 #include "vtkPlusChannel.h"
 #include "vtkPlusDataCollector.h"
 #include "vtkPlusDataSource.h"
@@ -19,7 +19,7 @@ See License.txt for details.
 #include "vtkPlusRfProcessor.h"
 #include "vtkPlusSavedDataSource.h"
 #ifdef PLUS_USE_ULTRASONIX_VIDEO
-#include "vtkPlusSonixVideoSource.h"
+  #include "vtkPlusSonixVideoSource.h"
 #endif
 
 // VTK includes
@@ -48,7 +48,7 @@ public:
   {
     vtkSmartPointer<vtkMatrix4x4> tFrame2Tracker = vtkSmartPointer<vtkMatrix4x4>::New();
 
-    PlusTrackedFrame trackedFrame;
+    igsioTrackedFrame trackedFrame;
     if (this->BroadcastChannel->GetTrackedFrame(trackedFrame) != PLUS_SUCCESS)
     {
       LOG_WARNING("Unable to get tracked frame!");
@@ -77,9 +77,8 @@ public:
     {
       std::ostringstream ss;
       ss.precision(2);
-      TrackedFrameFieldStatus status;
-      if (trackedFrame.GetFrameTransformStatus(TransformName, status) == PLUS_SUCCESS
-          && status == FIELD_OK)
+      ToolStatus status(TOOL_INVALID);
+      if (trackedFrame.GetFrameTransformStatus(TransformName, status) == PLUS_SUCCESS && status == TOOL_OK)
       {
         trackedFrame.GetFrameTransform(TransformName, tFrame2Tracker);
         ss  << std::fixed
@@ -109,7 +108,7 @@ public:
   vtkImageViewer* Viewer;
   vtkRenderWindowInteractor* RenderWindowInteractor;
   vtkTextActor* StepperTextActor;
-  PlusTransformName TransformName;
+  igsioTransformName TransformName;
   vtkImageData* ImageData;
   vtkPlusRfProcessor* RfProcessor;
 };

@@ -12,7 +12,7 @@ happens between two threads. In real life, it happens between two programs.
 */
 
 #include "PlusConfigure.h"
-#include "PlusCommon.h"
+#include "igsioCommon.h"
 #include "vtkNew.h"
 #include "vtkPlusDataCollector.h"
 #include "vtkPlusOpenIGTLinkVideoSource.h"
@@ -21,7 +21,7 @@ happens between two threads. In real life, it happens between two programs.
 #include "vtkPlusDataSource.h"
 #include "vtkPlusOpenIGTLinkServer.h"
 #include "vtkSmartPointer.h"
-#include "vtkPlusTransformRepository.h"
+#include "vtkIGSIOTransformRepository.h"
 #include "vtksys/CommandLineArguments.hxx"
 
 // For catching Ctrl-C
@@ -93,7 +93,7 @@ int main(int argc, char** argv)
   vtkXMLDataElement* configRootElement = vtkPlusConfig::GetInstance()->GetDeviceSetConfigurationData();
 
   // Create transform repository instance
-  vtkNew<vtkPlusTransformRepository> transformRepository;
+  vtkNew<vtkIGSIOTransformRepository> transformRepository;
   if (transformRepository->ReadConfiguration(configRootElement) != PLUS_SUCCESS)
   {
     LOG_ERROR("Transform repository failed to read configuration");
@@ -142,7 +142,7 @@ int main(int argc, char** argv)
     exit(EXIT_FAILURE);
   }
 
-  double startTime = vtkPlusAccurateTimer::GetSystemTime();
+  double startTime = vtkIGSIOAccurateTimer::GetSystemTime();
 
   LOG_INFO("Server status: Server(s) are running.");
   LOG_INFO("Press Ctrl-C to quit.");
@@ -157,7 +157,7 @@ int main(int argc, char** argv)
 
   // Run server until requested
   const double commandQueuePollIntervalSec = 0.010;
-  while ((neverStop || (vtkPlusAccurateTimer::GetSystemTime() < startTime + runTimeSec)) && !stopRequested)
+  while ((neverStop || (vtkIGSIOAccurateTimer::GetSystemTime() < startTime + runTimeSec)) && !stopRequested)
   {
     for (std::vector<vtkPlusOpenIGTLinkServer*>::iterator it = serverList.begin(); it != serverList.end(); ++it)
     {
@@ -169,7 +169,7 @@ int main(int argc, char** argv)
     CheckConsoleWindowCloseRequested(consoleHwnd);
 #endif
     // Need to process messages while waiting because some devices (such as the vtkPlusWin32VideoSource2) require event processing
-    vtkPlusAccurateTimer::DelayWithEventProcessing(commandQueuePollIntervalSec);
+    vtkIGSIOAccurateTimer::DelayWithEventProcessing(commandQueuePollIntervalSec);
   }
 
   for (std::vector<vtkPlusOpenIGTLinkServer*>::iterator it = serverList.begin(); it != serverList.end(); ++it)

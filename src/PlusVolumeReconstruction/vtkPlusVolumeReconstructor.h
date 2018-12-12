@@ -8,15 +8,16 @@
 #define __vtkPlusVolumeReconstructor_h
 
 #include "PlusConfigure.h"
+#include "igsioCommon.h"
 #include "vtkPlusVolumeReconstructionExport.h"
 #include "vtkPlusPasteSliceIntoVolume.h"
 #include "vtkImageAlgorithm.h"
 
-class PlusTrackedFrame;
+//class igsioTrackedFrame; 
 class vtkPlusFanAngleDetectorAlgo;
 class vtkPlusFillHolesInVolume;
-class vtkPlusTrackedFrameList;
-class vtkPlusTransformRepository;
+//class vtkIGSIOTrackedFrameList;
+//class vtkIGSIOTransformRepository;
 
 /*!
   \class vtkPlusVolumeReconstructor
@@ -61,9 +62,9 @@ public:
 
   /*!
     Automatically adjusts the reconstruced volume size to enclose all the
-    frames in the supplied vtkPlusTrackedFrameList. It clears the reconstructed volume.
+    frames in the supplied vtkIGSIOTrackedFrameList. It clears the reconstructed volume.
   */
-  virtual PlusStatus SetOutputExtentFromFrameList(vtkPlusTrackedFrameList* trackedFrameList, vtkPlusTransformRepository* transformRepository, std::string& errorDescription);
+  virtual PlusStatus SetOutputExtentFromFrameList(vtkIGSIOTrackedFrameList* trackedFrameList, vtkIGSIOTransformRepository* transformRepository, std::string& errorDescription);
 
   /*!
     Inserts the tracked frame into the volume. The origin, spacing, and extent of the output volume
@@ -71,7 +72,7 @@ public:
     or setting the OutputSpacing, OutputOrigin, and OutputExtent attributes in the configuration data
     element).
   */
-  virtual PlusStatus AddTrackedFrame(PlusTrackedFrame* frame, vtkPlusTransformRepository* transformRepository, bool* insertedIntoVolume = NULL);
+  virtual PlusStatus AddTrackedFrame(igsioTrackedFrame* frame, vtkIGSIOTransformRepository* transformRepository, bool* insertedIntoVolume = NULL);
 
   /*!
     Makes the reconstructed volume ready to be retrieved.
@@ -96,20 +97,22 @@ public:
   virtual PlusStatus ExtractAccumulation(vtkImageData* volume);
 
   /*!
-    Save reconstructed volume to metafile
+    Save reconstructed volume to file
     \param filename Path and filename of the output file
     \accumulation True if accumulation buffer needs to be saved, false if gray levels (default)
     \useCompression True if compression is turned on (default), false otherwise
   */
-  PlusStatus SaveReconstructedVolumeToMetafile(const std::string& filename, bool accumulation = false, bool useCompression = true);
+  PlusStatus SaveReconstructedVolumeToFile(const std::string& filename, bool accumulation = false, bool useCompression = true);
+  PlusStatus SaveReconstructedVolumeToMetafile(const std::string& filename, bool accumulation = false, bool useCompression = true) { return SaveReconstructedVolumeToFile(filename, accumulation, useCompression); }
 
   /*!
-    Save reconstructed volume to metafile
+    Save reconstructed volume to file
     \param volumeToSave Reconstructed volume to be saved
     \param filename Path and filename of the output file
     \useCompression True if compression is turned on (default), false otherwise
   */
-  static PlusStatus SaveReconstructedVolumeToMetafile(vtkImageData* volumeToSave, const std::string& filename, bool useCompression = true);
+  static PlusStatus SaveReconstructedVolumeToFile(vtkImageData* volumeToSave, const std::string& filename, bool useCompression = true);
+  static PlusStatus SaveReconstructedVolumeToMetafile(vtkImageData* volumeToSave, const std::string& filename, bool useCompression = true) { return vtkPlusVolumeReconstructor::SaveReconstructedVolumeToFile(volumeToSave, filename, useCompression); }
 
   /*! Get/set the Image coordinate system name. It overrides the value read from the config file. */
   vtkGetStdStringMacro(ImageCoordinateFrame);
@@ -209,7 +212,7 @@ protected:
   void AddImageToExtent(vtkImageData* image, vtkMatrix4x4* imageToReference, double* extent_Ref);
 
   /*! Construct ImageToReference transform name from the image and reference coordinate frame member variables */
-  PlusStatus GetImageToReferenceTransformName(PlusTransformName& imageToReferenceTransformName);
+  PlusStatus GetImageToReferenceTransformName(igsioTransformName& imageToReferenceTransformName);
 
 protected:
   vtkPlusPasteSliceIntoVolume* Reconstructor;

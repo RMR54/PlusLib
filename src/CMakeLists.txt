@@ -40,10 +40,7 @@ ENDIF()
 
 # --------------------------------------------------------------------------
 # Use IGSIO
-OPTION(PLUS_USE_IGSIO "Use IGSIO" OFF)
-IF (PLUS_USE_IGSIO)
-  FIND_PACKAGE(IGSIO REQUIRED NO_MODULE)
-ENDIF()
+FIND_PACKAGE(IGSIO REQUIRED NO_MODULE)
 
 # --------------------------------------------------------------------------
 # Options
@@ -497,7 +494,7 @@ ENDIF()
 FILE(RELATIVE_PATH VTK_REL_DIR ${CMAKE_INSTALL_PREFIX} ${VTK_DIR})
 FILE(RELATIVE_PATH ITK_REL_DIR ${CMAKE_INSTALL_PREFIX} ${ITK_DIR})
 
-IF(${PLUS_USE_tesseract})
+IF(${PLUS_USE_TextRecognizer})
   # use the relative path instead of absolute path
   FILE(RELATIVE_PATH tesseract_DIR ${CMAKE_INSTALL_PREFIX} ${tesseract_DIR})
   SET(tesseract_DIR "\${PLUSLIB_INSTALL_PATH}/${tesseract_DIR}")

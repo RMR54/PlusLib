@@ -6,12 +6,12 @@ See License.txt for details.
 
 // Local includes
 #include "PlusConfigure.h"
-#include "PlusCommon.h"
+#include "igsioCommon.h"
 #include "vtkPlusDataSource.h"
 #include "vtkPlusOpenIGTLinkServer.h"
 #include "vtkPlusDataCollector.h"
 #include "vtkPlusOpenIGTLinkVideoSource.h"
-#include "vtkPlusTransformRepository.h"
+#include "vtkIGSIOTransformRepository.h"
 
 // VTK includes
 #include <vtkSmartPointer.h>
@@ -36,7 +36,7 @@ PlusStatus ConnectClients(int listeningPort, std::vector< vtkSmartPointer<vtkPlu
     vtkSmartPointer<vtkPlusOpenIGTLinkVideoSource> client = vtkSmartPointer<vtkPlusOpenIGTLinkVideoSource>::New();
     client->SetDeviceId("OpenIGTLinkVideoReceiveDevice");
     client->ReadConfiguration(configRootElement);
-    client->SetDeviceId(std::string("OpenIGTLinkVideoReceiveDevice") + PlusCommon::ToString<int>(i));
+    client->SetDeviceId(std::string("OpenIGTLinkVideoReceiveDevice") + igsioCommon::ToString<int>(i));
     client->SetServerAddress("127.0.0.1");
     client->SetServerPort(listeningPort);
     if (client->OutputChannelCount() == 0)
@@ -55,7 +55,7 @@ PlusStatus ConnectClients(int listeningPort, std::vector< vtkSmartPointer<vtkPlu
     }
     client->SetBufferSize(*aChannel, 10);
     client->SetMessageType("TrackedFrame");
-    PlusTransformName name("Image", "Reference");
+    igsioTransformName name("Image", "Reference");
     client->SetImageMessageEmbeddedTransformName(name);
     aSource->SetInputImageOrientation(US_IMG_ORIENT_MF);
 
@@ -135,7 +135,7 @@ vtkSmartPointer<vtkPlusOpenIGTLinkServer> StartServer(const std::string& inputCo
   // Print configuration file contents for debugging purposes
   LOG_DEBUG("Device set configuration is read from file: " << inputConfigFileName);
   std::ostringstream xmlFileContents;
-  PlusCommon::XML::PrintXML(xmlFileContents, vtkIndent(1), configRootElement);
+  igsioCommon::XML::PrintXML(xmlFileContents, vtkIndent(1), configRootElement);
   LOG_DEBUG("Device set configuration file contents: " << std::endl << xmlFileContents.str());
 
   LOG_INFO("Server status: Reading configuration.");
@@ -148,7 +148,7 @@ vtkSmartPointer<vtkPlusOpenIGTLinkServer> StartServer(const std::string& inputCo
   }
 
   // Create transform repository instance
-  vtkSmartPointer<vtkPlusTransformRepository> transformRepository = vtkSmartPointer<vtkPlusTransformRepository>::New();
+  vtkSmartPointer<vtkIGSIOTransformRepository> transformRepository = vtkSmartPointer<vtkIGSIOTransformRepository>::New();
   if (transformRepository->ReadConfiguration(configRootElement) != PLUS_SUCCESS)
   {
     LOG_ERROR("Transform repository failed to read configuration");
@@ -268,13 +268,13 @@ int main(int argc, char** argv)
   LOG_INFO("Clients are connected");
 
   const double commandQueuePollIntervalSec = 0.010;
-  const double startTime = vtkPlusAccurateTimer::GetSystemTime();
-  while (vtkPlusAccurateTimer::GetSystemTime() < startTime + WAIT_TIME_SEC)
+  const double startTime = vtkIGSIOAccurateTimer::GetSystemTime();
+  while (vtkIGSIOAccurateTimer::GetSystemTime() < startTime + WAIT_TIME_SEC)
   {
     server->ProcessPendingCommands();
 
     // Need to process messages while waiting because some devices (such as the vtkPlusWin32VideoSource2) require event processing
-    vtkPlusAccurateTimer::DelayWithEventProcessing(commandQueuePollIntervalSec);
+    vtkIGSIOAccurateTimer::DelayWithEventProcessing(commandQueuePollIntervalSec);
   }
 
   LOG_INFO("Requested testing time elapsed");

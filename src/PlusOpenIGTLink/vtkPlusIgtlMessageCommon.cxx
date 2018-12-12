@@ -6,17 +6,18 @@ See License.txt for details.
 
 // Local includes
 #include "PlusConfigure.h"
-#include "PlusTrackedFrame.h"
-#include "PlusVideoFrame.h"
+#include "igsioTrackedFrame.h"
+#include "igsioVideoFrame.h"
 #include "vtkPlusIgtlMessageCommon.h"
-#include "vtkPlusTrackedFrameList.h"
-#include "vtkPlusTransformRepository.h"
+#include "vtkIGSIOTrackedFrameList.h"
+#include "vtkIGSIOTransformRepository.h"
 
 // VTK includes
 #include <vtkImageData.h>
 #include <vtkMatrix4x4.h>
 #include <vtkObjectFactory.h>
 #include <vtkTransform.h>
+#include <vtkNew.h>
 
 // OpenIGTLink includes
 #include <igtl_tdata.h>
@@ -26,7 +27,7 @@ See License.txt for details.
 #include <igtlioPolyDataConverter.h>
 #include <igtlioTransformConverter.h>
 #if defined(OpenIGTLink_ENABLE_VIDEOSTREAMING)
-#include <igtlioVideoConverter.h>
+  #include <igtlioVideoConverter.h>
 #endif
 
 //----------------------------------------------------------------------------
@@ -51,8 +52,8 @@ void vtkPlusIgtlMessageCommon::PrintSelf(ostream& os, vtkIndent indent)
 
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::GetIgtlMatrix(igtl::Matrix4x4& igtlMatrix,
-    vtkPlusTransformRepository* transformRepository,
-    PlusTransformName& transformName)
+    vtkIGSIOTransformRepository* transformRepository,
+    igsioTransformName& transformName)
 {
   igtl::IdentityMatrix(igtlMatrix);
 
@@ -62,15 +63,15 @@ PlusStatus vtkPlusIgtlMessageCommon::GetIgtlMatrix(igtl::Matrix4x4& igtlMatrix,
     return PLUS_FAIL;
   }
 
-  bool valid = false;
+  ToolStatus status(TOOL_INVALID);
   vtkSmartPointer<vtkMatrix4x4> vtkMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
-  if (transformRepository->GetTransform(transformName, vtkMatrix, &valid) != PLUS_SUCCESS)
+  if (transformRepository->GetTransform(transformName, vtkMatrix, &status) != PLUS_SUCCESS)
   {
     LOG_ERROR("Failed to get transform from transform repository (" << transformName.From() << " to " << transformName.To() << ")");
     return PLUS_FAIL;
   }
 
-  if (!valid)
+  if (status != TOOL_OK)
   {
     LOG_DEBUG("Skipped transformation matrix - Invalid transform in the transform repository (" << transformName.From() << " to " << transformName.To() << ")");
     return PLUS_FAIL;
@@ -84,9 +85,9 @@ PlusStatus vtkPlusIgtlMessageCommon::GetIgtlMatrix(igtl::Matrix4x4& igtlMatrix,
 
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::PackTrackedFrameMessage(igtl::PlusTrackedFrameMessage::Pointer trackedFrameMessage,
-    PlusTrackedFrame& trackedFrame,
+    igsioTrackedFrame& trackedFrame,
     vtkSmartPointer<vtkMatrix4x4> embeddedImageTransform,
-    const std::vector<PlusTransformName>& requestedTransforms)
+    const std::vector<igsioTransformName>& requestedTransforms)
 {
   if (trackedFrameMessage.IsNull())
   {
@@ -113,8 +114,8 @@ PlusStatus vtkPlusIgtlMessageCommon::PackTrackedFrameMessage(igtl::PlusTrackedFr
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::UnpackTrackedFrameMessage(igtl::MessageHeader::Pointer headerMsg,
     igtl::Socket* socket,
-    PlusTrackedFrame& trackedFrame,
-    const PlusTransformName& embeddedTransformName,
+    igsioTrackedFrame& trackedFrame,
+    const igsioTransformName& embeddedTransformName,
     int crccheck)
 {
   if (headerMsg.IsNull())
@@ -159,7 +160,7 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackTrackedFrameMessage(igtl::MessageHead
 }
 
 //----------------------------------------------------------------------------
-PlusStatus vtkPlusIgtlMessageCommon::PackUsMessage(igtl::PlusUsMessage::Pointer usMessage, PlusTrackedFrame& trackedFrame)
+PlusStatus vtkPlusIgtlMessageCommon::PackUsMessage(igtl::PlusUsMessage::Pointer usMessage, igsioTrackedFrame& trackedFrame)
 {
   if (usMessage.IsNull())
   {
@@ -176,7 +177,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackUsMessage(igtl::PlusUsMessage::Pointer 
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::UnpackUsMessage(igtl::MessageHeader::Pointer headerMsg,
     igtl::Socket* socket,
-    PlusTrackedFrame& trackedFrame,
+    igsioTrackedFrame& trackedFrame,
     int crccheck)
 {
   if (headerMsg.IsNull())
@@ -212,7 +213,7 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackUsMessage(igtl::MessageHeader::Pointe
 
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::PackImageMessage(igtl::ImageMessage::Pointer imageMessage,
-    PlusTrackedFrame& trackedFrame,
+    igsioTrackedFrame& trackedFrame,
     const vtkMatrix4x4& matrix)
 {
   if (imageMessage.IsNull())
@@ -238,7 +239,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackImageMessage(igtl::ImageMessage::Pointe
   int subOffset[3] = { 0 };
   double imageSpacingMm[3] = { 0 };
   double imageOriginMm[3] = { 0 };
-  int scalarType = PlusVideoFrame::GetIGTLScalarPixelTypeFromVTK(trackedFrame.GetImageData()->GetVTKScalarPixelType());
+  int scalarType = PlusCommon::GetIGTLScalarPixelTypeFromVTK(trackedFrame.GetImageData()->GetVTKScalarPixelType());
   unsigned int numScalarComponents(1);
   if (trackedFrame.GetImageData()->GetNumberOfScalarComponents(numScalarComponents) == PLUS_FAIL)
   {
@@ -317,7 +318,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackImageMessage(igtl::ImageMessage::Pointe
   image->GetOrigin(imageOriginMm);
   // imageMessage->SetOrigin() is not used, because origin and normal is set later by igtlioImageConverter::VTKTransformToIGTLImage()
 
-  int scalarType = PlusVideoFrame::GetIGTLScalarPixelTypeFromVTK(image->GetScalarType());
+  int scalarType = PlusCommon::GetIGTLScalarPixelTypeFromVTK(image->GetScalarType());
   imageMessage->SetScalarType(scalarType);
   imageMessage->SetEndian(igtl_is_little_endian() ? igtl::ImageMessage::ENDIAN_LITTLE : igtl::ImageMessage::ENDIAN_BIG);
   imageMessage->AllocateScalars();
@@ -346,8 +347,8 @@ PlusStatus vtkPlusIgtlMessageCommon::PackImageMessage(igtl::ImageMessage::Pointe
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::UnpackImageMessage(igtl::MessageHeader::Pointer headerMsg,
     igtl::Socket* socket,
-    PlusTrackedFrame& trackedFrame,
-    const PlusTransformName& embeddedTransformName,
+    igsioTrackedFrame& trackedFrame,
+    const igsioTransformName& embeddedTransformName,
     int crccheck)
 {
   if (headerMsg.IsNull())
@@ -395,8 +396,8 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackImageMessage(igtl::MessageHeader::Poi
   FrameSizeType imageSize = {static_cast<unsigned int>(imgSize[0]), static_cast<unsigned int>(imgSize[1]), static_cast<unsigned int>(imgSize[2]) };
 
   // Set scalar pixel type
-  PlusCommon::VTKScalarPixelType pixelType = PlusVideoFrame::GetVTKScalarPixelTypeFromIGTL(imgMsg->GetScalarType());
-  PlusVideoFrame frame;
+  igsioCommon::VTKScalarPixelType pixelType = PlusCommon::GetVTKScalarPixelTypeFromIGTL(imgMsg->GetScalarType());
+  igsioVideoFrame frame;
   if (frame.AllocateFrame(imageSize, pixelType, imgMsg->GetNumComponents()) != PLUS_SUCCESS)
   {
     LOG_ERROR("Failed to allocate image data for tracked frame!");
@@ -431,14 +432,14 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackImageMessage(igtl::MessageHeader::Poi
 
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::PackImageMetaMessage(igtl::ImageMetaMessage::Pointer imageMetaMessage,
-    PlusCommon::ImageMetaDataList& imageMetaDataList)
+    igsioCommon::ImageMetaDataList& imageMetaDataList)
 {
   if (imageMetaMessage.IsNull())
   {
     LOG_ERROR("Failed to pack image message - input image message is NULL");
     return PLUS_FAIL;
   }
-  for (PlusCommon::ImageMetaDataList::iterator it = imageMetaDataList.begin(); it != imageMetaDataList.end(); it++)
+  for (igsioCommon::ImageMetaDataList::iterator it = imageMetaDataList.begin(); it != imageMetaDataList.end(); it++)
   {
     igtl::ImageMetaElement::Pointer imageMetaElement = igtl::ImageMetaElement::New();
     igtl::TimeStamp::Pointer timeStamp =  igtl::TimeStamp::New();
@@ -476,7 +477,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackImageMetaMessage(igtl::ImageMetaMessage
 //----------------------------------------------------------------------------
 #if defined(OpenIGTLink_ENABLE_VIDEOSTREAMING)
 PlusStatus vtkPlusIgtlMessageCommon::PackVideoMessage(igtl::VideoMessage::Pointer videoMessage,
-  PlusTrackedFrame& trackedFrame, GenericEncoder* encoder, const vtkMatrix4x4& matrix)
+    igsioTrackedFrame& trackedFrame, GenericEncoder* encoder, const vtkMatrix4x4& matrix)
 {
   if (videoMessage.IsNull())
   {
@@ -498,7 +499,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackVideoMessage(igtl::VideoMessage::Pointe
   int subOffset[3] = { 0 };
   double imageSpacingMm[3] = { 0 };
   double imageOriginMm[3] = { 0 };
-  int scalarType = PlusVideoFrame::GetIGTLScalarPixelTypeFromVTK(trackedFrame.GetImageData()->GetVTKScalarPixelType());
+  int scalarType = PlusCommon::GetIGTLScalarPixelTypeFromVTK(trackedFrame.GetImageData()->GetVTKScalarPixelType());
   unsigned int numScalarComponents(1);
   if (trackedFrame.GetImageData()->GetNumberOfScalarComponents(numScalarComponents) == PLUS_FAIL)
   {
@@ -542,9 +543,9 @@ PlusStatus vtkPlusIgtlMessageCommon::PackVideoMessage(igtl::VideoMessage::Pointe
 
 //-------------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::PackTransformMessage(igtl::TransformMessage::Pointer transformMessage,
-    PlusTransformName& transformName,
+    igsioTransformName& transformName,
     igtl::Matrix4x4& igtlMatrix,
-    bool transformValid,
+    ToolStatus status,
     double timestamp)
 {
   if (transformMessage.IsNull())
@@ -559,8 +560,8 @@ PlusStatus vtkPlusIgtlMessageCommon::PackTransformMessage(igtl::TransformMessage
   std::string strTransformName;
   transformName.GetTransformName(strTransformName);
 
-  transformMessage->SetMetaDataElement("TransformValid", transformValid);
-
+  transformMessage->SetMetaDataElement("TransformValid", status == TOOL_OK);
+  transformMessage->SetMetaDataElement("TransformStatus", IANA_TYPE_US_ASCII, igsioCommon::ConvertToolStatusToString(status));
   transformMessage->SetMatrix(igtlMatrix);
   transformMessage->SetTimeStamp(igtlTime);
   transformMessage->SetDeviceName(strTransformName.c_str());
@@ -592,7 +593,8 @@ PlusStatus vtkPlusIgtlMessageCommon::PackPolyDataMessage(igtl::PolyDataMessage::
 
 //-------------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::PackTrackingDataMessage(igtl::TrackingDataMessage::Pointer trackingDataMessage,
-    const std::map<std::string, vtkSmartPointer<vtkMatrix4x4>>& transforms,
+    const std::vector<igsioTransformName>& names,
+    const vtkIGSIOTransformRepository& repository,
     double timestamp)
 {
   if (trackingDataMessage.IsNull())
@@ -604,21 +606,29 @@ PlusStatus vtkPlusIgtlMessageCommon::PackTrackingDataMessage(igtl::TrackingDataM
   igtl::TimeStamp::Pointer igtlTime = igtl::TimeStamp::New();
   igtlTime->SetTime(timestamp);
 
-  for (auto it = transforms.begin(); it != transforms.end(); ++it)
+  for (auto it = names.begin(); it != names.end(); ++it)
   {
+    vtkNew<vtkMatrix4x4> vtkMat;
+    ToolStatus status(TOOL_INVALID);
+    if (repository.GetTransform(*it, vtkMat.GetPointer(), &status) != PLUS_SUCCESS)
+    {
+      LOG_ERROR("Transform " << it->From() << "To" << it->To() << " not found in repository.");
+      continue;
+    }
     igtl::Matrix4x4 matrix;
-    if (igtlioTransformConverter::VTKToIGTLTransform(*(it->second), matrix) != 1)
+    if (igtlioTransformConverter::VTKToIGTLTransform(*vtkMat.GetPointer(), matrix) != 1)
     {
       LOG_ERROR("Unable to convert from VTK to IGTL transform.");
       continue;
     }
 
     igtl::TrackingDataElement::Pointer trackElement = igtl::TrackingDataElement::New();
-    std::string shortenedName = it->first.empty() ? "UnknownToUnknown" : it->first.substr(0, IGTL_TDATA_LEN_NAME);
+    std::string shortenedName = it->GetTransformName().empty() ? "UnknownToUnknown" : it->GetTransformName().substr(0, IGTL_TDATA_LEN_NAME);
     trackElement->SetName(shortenedName.c_str());
     trackElement->SetType(igtl::TrackingDataElement::TYPE_6D);
     trackElement->SetMatrix(matrix);
     trackingDataMessage->AddTrackingDataElement(trackElement);
+    trackingDataMessage->SetMetaDataElement(shortenedName + "Status", IANA_TYPE_US_ASCII,  igsioCommon::ConvertToolStatusToString(status));
   }
 
   trackingDataMessage->SetTimeStamp(igtlTime);
@@ -630,7 +640,8 @@ PlusStatus vtkPlusIgtlMessageCommon::PackTrackingDataMessage(igtl::TrackingDataM
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::UnpackTrackingDataMessage(igtl::MessageHeader::Pointer headerMsg,
     igtl::Socket* socket,
-    std::map<std::string, vtkSmartPointer<vtkMatrix4x4>>& outTransforms,
+    std::vector<igsioTransformName>& names,
+    vtkIGSIOTransformRepository& repository,
     double& timestamp,
     int crccheck)
 {
@@ -676,13 +687,26 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackTrackingDataMessage(igtl::MessageHead
     igtl::Matrix4x4 igtlMatrix;
     currentTrackingData->GetMatrix(igtlMatrix);
 
+    ToolStatus status(TOOL_UNKNOWN);
+    std::string statusStr;
+    if (tdMsg->GetMetaDataElement(std::string(currentTrackingData->GetName()) + "Status", statusStr))
+    {
+      status = igsioCommon::ConvertStringToToolStatus(statusStr);
+    }
     vtkSmartPointer<vtkMatrix4x4> mat = vtkSmartPointer<vtkMatrix4x4>::New();
     if (igtlioTransformConverter::IGTLToVTKTransform(igtlMatrix, mat) != 1)
     {
       LOG_ERROR("Unable to unpack transform message - cannot convert from IGTL to VTK");
       continue;
     }
-    outTransforms[name] = mat;
+    igsioTransformName transName(name);
+    if (!transName.IsValid())
+    {
+      LOG_ERROR("Invalid transform name sent via TDATA message. Skipping.");
+      continue;
+    }
+    names.push_back(name);
+    repository.SetTransform(transName, mat, status);
   }
 
   // Get timestamp
@@ -697,6 +721,7 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackTrackingDataMessage(igtl::MessageHead
 PlusStatus vtkPlusIgtlMessageCommon::UnpackTransformMessage(igtl::MessageHeader::Pointer headerMsg,
     igtl::Socket* socket,
     vtkMatrix4x4* transformMatrix,
+    ToolStatus& toolStatus,
     std::string& transformName,
     double& timestamp,
     int crccheck)
@@ -753,6 +778,14 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackTransformMessage(igtl::MessageHeader:
   transMsg->GetTimeStamp(igtlTimestamp);
   timestamp = igtlTimestamp->GetTimeStamp();
 
+  // Status
+  std::string statusStr;
+  toolStatus = TOOL_UNKNOWN;
+  if (transMsg->GetMetaDataElement("TransformStatus", statusStr))
+  {
+    toolStatus = igsioCommon::ConvertStringToToolStatus(statusStr);
+  }
+
   // Get transform name
   transformName = transMsg->GetDeviceName();
 
@@ -761,7 +794,8 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackTransformMessage(igtl::MessageHeader:
 
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusIgtlMessageCommon::PackPositionMessage(igtl::PositionMessage::Pointer positionMessage,
-    PlusTransformName& transformName,
+    igsioTransformName& transformName,
+    ToolStatus status,
     float position[3],
     float quaternion[4],
     double timestamp)
@@ -780,6 +814,7 @@ PlusStatus vtkPlusIgtlMessageCommon::PackPositionMessage(igtl::PositionMessage::
 
   positionMessage->SetPosition(position);
   positionMessage->SetQuaternion(quaternion);
+  positionMessage->SetMetaDataElement("TransformStatus", IANA_TYPE_US_ASCII, igsioCommon::ConvertToolStatusToString(status));
   positionMessage->SetTimeStamp(igtlTime);
   positionMessage->SetDeviceName(strTransformName.c_str());
   positionMessage->Pack();
@@ -792,6 +827,7 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackPositionMessage(igtl::MessageHeader::
     igtl::Socket* socket,
     vtkMatrix4x4* transformMatrix,
     std::string& transformName,
+    ToolStatus& toolStatus,
     double& timestamp,
     int crccheck)
 {
@@ -847,6 +883,14 @@ PlusStatus vtkPlusIgtlMessageCommon::UnpackPositionMessage(igtl::MessageHeader::
   transformMatrix->SetElement(0, 3, igtlMatrix[0][3]);
   transformMatrix->SetElement(1, 3, igtlMatrix[1][3]);
   transformMatrix->SetElement(2, 3, igtlMatrix[2][3]);
+
+  // Status
+  std::string statusStr;
+  toolStatus = TOOL_UNKNOWN;
+  if (posMsg->GetMetaDataElement("Status", statusStr))
+  {
+    toolStatus = igsioCommon::ConvertStringToToolStatus(statusStr);
+  }
 
   // Get timestamp
   igtl::TimeStamp::Pointer igtlTimestamp = igtl::TimeStamp::New();

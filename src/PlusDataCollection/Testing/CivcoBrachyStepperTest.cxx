@@ -102,7 +102,7 @@ int main (int argc, char* argv[])
         //return EXIT_FAILURE; 
       }
 
-      vtkPlusAccurateTimer::Delay(0.001*samplingTimeMs); 
+      vtkIGSIOAccurateTimer::Delay(0.001*samplingTimeMs); 
     }
 
     LOG_INFO( "Stopping stepper...\n");

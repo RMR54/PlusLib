@@ -5,18 +5,18 @@ SET( ConfigFilesDir ${PLUSLIB_DATA_DIR}/ConfigFiles )
 ADD_EXECUTABLE(TrackingTest TrackingTest.cxx )
 SET_TARGET_PROPERTIES(TrackingTest PROPERTIES FOLDER Tests)
 SET_TARGET_PROPERTIES(TrackingTest PROPERTIES FOLDER Tests)
-TARGET_LINK_LIBRARIES(TrackingTest vtkPlusDataCollection vtkPlusCommon )
+TARGET_LINK_LIBRARIES(TrackingTest vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon )
 GENERATE_HELP_DOC(TrackingTest)
 
 #*************************** TimestampFilteringTest ***************************
 ADD_EXECUTABLE(TimestampFilteringTest TimestampFilteringTest.cxx )
 SET_TARGET_PROPERTIES(TimestampFilteringTest PROPERTIES FOLDER Tests)
 SET_TARGET_PROPERTIES(TimestampFilteringTest PROPERTIES FOLDER Tests)
-TARGET_LINK_LIBRARIES(TimestampFilteringTest vtkPlusCommon vtkPlusDataCollection )
+TARGET_LINK_LIBRARIES(TimestampFilteringTest vtkPlusCommon vtkIGSIOCommon vtkPlusDataCollection )
 
 ADD_TEST(TimestampFilteringTest 
   ${PLUS_EXECUTABLE_OUTPUT_PATH}/TimestampFilteringTest
-  --source-seq-file=${TestDataDir}/TimestampFilteringTest.mha 
+  --source-seq-file=${TestDataDir}/TimestampFilteringTest.igs.mha 
   --averaged-items-for-filtering=20
   --max-timestamp-difference=0.08
   --min-stdev-reduction-factor=3.0
@@ -32,8 +32,8 @@ TARGET_LINK_LIBRARIES(vtkDataCollectorTest1 vtkPlusDataCollection vtkInteraction
 ADD_TEST(vtkDataCollectorTest1 
   ${PLUS_EXECUTABLE_OUTPUT_PATH}/vtkDataCollectorTest1
   --config-file=${ConfigFilesDir}/Testing/PlusDeviceSet_DataCollectionOnly_SavedDataset.xml 
-  --video-buffer-seq-file=${TestDataDir}/WaterTankBottomTranslationVideoBuffer.mha
-  --tracker-buffer-seq-file=${TestDataDir}/WaterTankBottomTranslationTrackerBuffer-trimmed.mha
+  --video-buffer-seq-file=${TestDataDir}/WaterTankBottomTranslationVideoBuffer.igs.mha
+  --tracker-buffer-seq-file=${TestDataDir}/WaterTankBottomTranslationTrackerBuffer-trimmed.igs.mha
   --rendering-off
   )
 SET_TESTS_PROPERTIES(vtkDataCollectorTest1 PROPERTIES FAIL_REGULAR_EXPRESSION "ERROR;WARNING")
@@ -54,8 +54,8 @@ SET_TARGET_PROPERTIES(vtkDataCollectorTest2 PROPERTIES FOLDER Tests)
 TARGET_LINK_LIBRARIES(vtkDataCollectorTest2 vtkPlusDataCollection )
 ADD_TEST(vtkDataCollectorTest2 
   ${PLUS_EXECUTABLE_OUTPUT_PATH}/vtkDataCollectorTest2
-  --video-buffer-seq-file=${TestDataDir}/WaterTankBottomTranslationVideoBuffer.mha
-  --tracker-buffer-seq-file=${TestDataDir}/WaterTankBottomTranslationTrackerBuffer-trimmed.mha
+  --video-buffer-seq-file=${TestDataDir}/WaterTankBottomTranslationVideoBuffer.igs.mha
+  --tracker-buffer-seq-file=${TestDataDir}/WaterTankBottomTranslationTrackerBuffer-trimmed.igs.mha
   --config-file=${ConfigFilesDir}/Testing/PlusDeviceSet_DataCollectionOnly_SavedDataset.xml 
   --acq-time-length=5
   --verbose=3
@@ -120,23 +120,12 @@ IF(PLUSBUILD_BUILD_PlusLib_TOOLS)
     ${PLUS_EXECUTABLE_OUTPUT_PATH}/PlusVersion
     )
 ENDIF()
-
-#*************************** vtkMetaImageSequenceIOTest  ***************************
-ADD_EXECUTABLE(vtkMetaImageSequenceIOTest vtkMetaImageSequenceIOTest.cxx )
-SET_TARGET_PROPERTIES(vtkMetaImageSequenceIOTest PROPERTIES FOLDER Tests)
-TARGET_LINK_LIBRARIES(vtkMetaImageSequenceIOTest vtkPlusDataCollection )
-ADD_TEST(vtkMetaImageSequenceIOTest 
-  ${PLUS_EXECUTABLE_OUTPUT_PATH}/vtkMetaImageSequenceIOTest
-  --img-seq-file=${TestDataDir}/MetaImageSequenceIOTest1.mhd
-  --output-img-seq-file=MetaImageSequenceIOTest1Output.mha
-  )
-SET_TESTS_PROPERTIES(vtkMetaImageSequenceIOTest PROPERTIES FAIL_REGULAR_EXPRESSION "ERROR;WARNING")
  
 #*************************** ViewSequenceFile  ***************************
 IF(PLUSBUILD_BUILD_PlusLib_TOOLS)
   ADD_TEST(ViewSequenceFileTest
     ${PLUS_EXECUTABLE_OUTPUT_PATH}/ViewSequenceFile
-    --source-seq-file=${TestDataDir}/SpinePhantomFreehand.mha
+    --source-seq-file=${TestDataDir}/SpinePhantomFreehand.igs.mha
     --config-file=${ConfigFilesDir}/Testing/PlusDeviceSet_SpinePhantomFreehandReconstructionOnly.xml
     --image-to-reference-transform=ImageToTracker
     --rendering-off
@@ -166,7 +155,7 @@ SET_TESTS_PROPERTIES(vtkFcsvWriterTest1 PROPERTIES FAIL_REGULAR_EXPRESSION "ERRO
 IF(PLUS_USE_ULTRASONIX_VIDEO)
   ADD_EXECUTABLE(vtkSonixVideoSourceTest1 vtkSonixVideoSourceTest1.cxx )
   SET_TARGET_PROPERTIES(vtkSonixVideoSourceTest1 PROPERTIES FOLDER Tests)
-  TARGET_LINK_LIBRARIES(vtkSonixVideoSourceTest1 vtkPlusDataCollection vtkPlusCommon vtkInteractionImage)
+  TARGET_LINK_LIBRARIES(vtkSonixVideoSourceTest1 vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon vtkInteractionImage)
 
   IF(PLUS_TEST_ULTRASONIX)
     ADD_TEST(vtkSonixVideoSourceTest1 
@@ -200,7 +189,7 @@ ENDIF()
 IF(PLUS_USE_INTERSONSDKCXX_VIDEO)
   ADD_EXECUTABLE(vtkIntersonSDKCxxVideoSourceTest vtkintersonSDKCxxVideoSourceTest.cxx)
   SET_TARGET_PROPERTIES(vtkIntersonSDKCxxVideoSourceTest PROPERTIES FOLDER Tests)
-  TARGET_LINK_LIBRARIES(vtkIntersonSDKCxxVideoSourceTest vtkPlusDataCollection vtkPlusCommon vtkInteractionImage)
+  TARGET_LINK_LIBRARIES(vtkIntersonSDKCxxVideoSourceTest vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon vtkInteractionImage)
   ADD_TEST(NAME vtkIntersonSDKCxxVideoSourceTest 
     COMMAND $<TARGET_FILE:vtkIntersonSDKCxxVideoSourceTest>
     --rendering-off 
@@ -239,7 +228,7 @@ ENDIF()
 IF(PLUS_USE_INTERSONARRAYSDKCXX_VIDEO)
   ADD_EXECUTABLE(vtkIntersonArraySDKCxxVideoSourceTest vtkintersonArraySDKCxxVideoSourceTest.cxx)
   SET_TARGET_PROPERTIES(vtkIntersonArraySDKCxxVideoSourceTest PROPERTIES FOLDER Tests)
-  TARGET_LINK_LIBRARIES(vtkIntersonArraySDKCxxVideoSourceTest vtkPlusDataCollection vtkPlusCommon vtkInteractionImage)
+  TARGET_LINK_LIBRARIES(vtkIntersonArraySDKCxxVideoSourceTest vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon vtkInteractionImage)
   ADD_TEST(NAME vtkIntersonArraySDKCxxVideoSourceTest
     COMMAND $<TARGET_FILE:vtkIntersonArraySDKCxxVideoSourceTest>
     --rendering-off
@@ -345,7 +334,7 @@ IF(PLUS_USE_WINPROBE_VIDEO)
   ADD_TEST(NAME vtkWinProbeVideoSourceTest 
     COMMAND $<TARGET_FILE:vtkWinProbeVideoSourceTest>
     --rendering-off
-    --output-seq-file=${TEST_OUTPUT_PATH}/WinProbeTest.nrrd
+    --output-seq-file=${TEST_OUTPUT_PATH}/WinProbeTest.igs.nrrd
     --config-file=${ConfigFilesDir}/PlusDeviceSet_Server_WinProbe.xml
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
@@ -390,7 +379,7 @@ ENDIF()
 IF(PLUS_USE_ULTRASONIX_VIDEO)
   ADD_EXECUTABLE(vtkSonixPortaVideoSourceTest vtkSonixPortaVideoSourceTest.cxx )
   SET_TARGET_PROPERTIES(vtkSonixPortaVideoSourceTest PROPERTIES FOLDER Tests)
-  TARGET_LINK_LIBRARIES(vtkSonixPortaVideoSourceTest vtkPlusDataCollection vtkPlusCommon vtkInteractionImage)
+  TARGET_LINK_LIBRARIES(vtkSonixPortaVideoSourceTest vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon vtkInteractionImage)
   # ADD_TEST(vtkSonixPortaVideoSourceTest 
   # ${PLUS_EXECUTABLE_OUTPUT_PATH}/vtkSonixPortaVideoSourceTest
   # To be added if the 3D probe is attached to the machine
@@ -444,21 +433,21 @@ ENDIF()
 IF(PLUS_USE_MICRONTRACKER)
   ADD_EXECUTABLE(vtkMicronTrackerTest vtkMicronTrackerTest.cxx)
   SET_TARGET_PROPERTIES(vtkMicronTrackerTest PROPERTIES FOLDER Tests)
-  TARGET_LINK_LIBRARIES(vtkMicronTrackerTest vtkPlusDataCollection vtkPlusCommon vtkInteractionImage)    
+  TARGET_LINK_LIBRARIES(vtkMicronTrackerTest vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon vtkInteractionImage)    
 ENDIF() 
 
 #*************************** IntelRealSenseTrackerTest ***************************
 IF(PLUS_USE_INTELREALSENSE)
   ADD_EXECUTABLE(vtkIntelRealSenseTrackerTest vtkIntelRealSenseTrackerTest.cxx)
   SET_TARGET_PROPERTIES(vtkIntelRealSenseTrackerTest PROPERTIES FOLDER Tests)
-  TARGET_LINK_LIBRARIES(vtkIntelRealSenseTrackerTest vtkPlusDataCollection vtkPlusCommon vtkInteractionImage)
+  TARGET_LINK_LIBRARIES(vtkIntelRealSenseTrackerTest vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon vtkInteractionImage)
 ENDIF()
 
 #*************************** IntelRealSenseCamTest ***************************
 IF(PLUS_USE_INTELREALSENSE_CAM)
   ADD_EXECUTABLE(vtkIntelRealSenseCamTest vtkIntelRealSenseCamTest.cxx)
   SET_TARGET_PROPERTIES(vtkIntelRealSenseCamTest PROPERTIES FOLDER Tests)
-  TARGET_LINK_LIBRARIES(vtkIntelRealSenseCamTest vtkPlusDataCollection vtkPlusCommon vtkInteractionImage)
+  TARGET_LINK_LIBRARIES(vtkIntelRealSenseCamTest vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon vtkInteractionImage)
 ENDIF()
 
 #*************************** vtkNVidiaDVPVideoSourceTest ***************************
@@ -492,14 +481,14 @@ ENDIF()
 IF(PLUS_USE_INFRARED_SEEK_CAM)
   ADD_EXECUTABLE(vtkInfraredSeekCamTest vtkInfraredSeekCamTest.cxx)
   SET_TARGET_PROPERTIES(vtkInfraredSeekCamTest PROPERTIES FOLDER Tests)
-  TARGET_LINK_LIBRARIES(vtkInfraredSeekCamTest vtkPlusDataCollection vtkPlusCommon vtkInteractionImage)
+  TARGET_LINK_LIBRARIES(vtkInfraredSeekCamTest vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon vtkInteractionImage)
 ENDIF()
 
 #*********************** InfraredTEQ1CameraDeviceTest *****************************
 IF(PLUS_USE_INFRARED_TEQ1_CAM)
   ADD_EXECUTABLE(vtkInfraredTEQ1CamTest vtkInfraredTEQ1CamTest.cxx)
   SET_TARGET_PROPERTIES(vtkInfraredTEQ1CamTest PROPERTIES FOLDER Tests)
-  TARGET_LINK_LIBRARIES(vtkInfraredTEQ1CamTest vtkPlusDataCollection vtkPlusCommon vtkInteractionImage)
+  TARGET_LINK_LIBRARIES(vtkInfraredTEQ1CamTest vtkPlusDataCollection vtkPlusCommon vtkIGSIOCommon vtkInteractionImage)
 ENDIF()
 
 #*************************** vtkOvrvisionProVideoSourceTest ***************************
@@ -549,18 +538,18 @@ ENDIF()
 #*************************** TransformInterpolationTest ***************************
 ADD_EXECUTABLE(TransformInterpolationTest TransformInterpolationTest.cxx)
 SET_TARGET_PROPERTIES(TransformInterpolationTest PROPERTIES FOLDER Tests)
-TARGET_LINK_LIBRARIES(TransformInterpolationTest vtkPlusCommon vtkPlusDataCollection)
+TARGET_LINK_LIBRARIES(TransformInterpolationTest vtkPlusCommon vtkIGSIOCommon vtkPlusDataCollection)
 
 ADD_TEST(TransformInterpolationTest 
   ${PLUS_EXECUTABLE_OUTPUT_PATH}/TransformInterpolationTest
-  --source-seq-file=${TestDataDir}/TransformInterpolationTest.mha 
+  --source-seq-file=${TestDataDir}/TransformInterpolationTest.igs.mha 
   --transform=ProbeToTracker
   --max-rotation-difference=1.0
   --max-translation-difference=0.5
   )
 
 #*************************** vtkVirtualTextRecognizerTest ***************************
-IF(PLUS_TEST_tesseract)
+IF(PLUS_TEST_TextRecognizer)
   ADD_EXECUTABLE(vtkVirtualTextRecognizerTest vtkVirtualTextRecognizerTest.cxx)
   SET_TARGET_PROPERTIES(vtkVirtualTextRecognizerTest PROPERTIES FOLDER Tests)
   TARGET_LINK_LIBRARIES(vtkVirtualTextRecognizerTest vtkPlusDataCollection vtkPlusCommon)

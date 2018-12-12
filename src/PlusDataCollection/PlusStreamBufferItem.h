@@ -9,8 +9,8 @@ See License.txt for details.
 
 #include "vtkPlusDataCollectionExport.h"
 
-#include "PlusCommon.h"
-#include "PlusVideoFrame.h"
+#include "igsioCommon.h"
+//#include "igsioVideoFrame.h"
 
 #include "vtkSmartPointer.h"
 
@@ -24,24 +24,10 @@ class vtkPlusDataSource;
 class vtkPlusVirtualMixer;
 
 #ifdef _WIN32
-typedef unsigned __int64 BufferItemUidType;
+  typedef unsigned __int64 BufferItemUidType;
 #else
-typedef unsigned long long BufferItemUidType;
+  typedef unsigned long long BufferItemUidType;
 #endif
-
-/*! Flags for tool statuses */
-enum ToolStatus
-{
-  TOOL_OK,            /*!< Tool OK */
-  TOOL_MISSING,       /*!< Tool or tool port is not available */
-  TOOL_OUT_OF_VIEW,   /*!< Cannot obtain transform for tool */
-  TOOL_OUT_OF_VOLUME, /*!< Tool is not within the sweet spot of system */
-  TOOL_SWITCH1_IS_ON, /*!< Various buttons/switches on tool */
-  TOOL_SWITCH2_IS_ON, /*!< Various buttons/switches on tool */
-  TOOL_SWITCH3_IS_ON, /*!< Various buttons/switches on tool */
-  TOOL_REQ_TIMEOUT,   /*!< Request timeout status */
-  TOOL_INVALID        /*!< Invalid tool status */
-};
 
 /*!
   \class DataBufferItem
@@ -133,7 +119,7 @@ public:
   /*! Copy stream buffer item */
   PlusStatus DeepCopy( StreamBufferItem* dataItem );
 
-  PlusVideoFrame& GetFrame() { return this->Frame; };
+  igsioVideoFrame& GetFrame() { return this->Frame; };
 
   /*! Set tracker matrix */
   PlusStatus SetMatrix( vtkMatrix4x4* matrix );
@@ -167,7 +153,7 @@ protected:
   FieldMapType FrameFields;
 
   bool ValidTransformData;
-  PlusVideoFrame Frame;
+  igsioVideoFrame Frame;
   vtkSmartPointer<vtkMatrix4x4> Matrix;
   ToolStatus Status;
 };

@@ -8,9 +8,9 @@
 #include "QPlusToolStateDisplayWidget.h"
 
 // PlusLib includes
-#include <PlusTrackedFrame.h>
+//#include <igsioTrackedFrame.h>
 #include <vtkPlusChannel.h>
-#include <vtkPlusTrackedFrameList.h>
+//#include <vtkIGSIOTrackedFrameList.h>
 
 // Qt includes
 #include <QGridLayout>
@@ -58,12 +58,12 @@ PlusStatus QPlusToolStateDisplayWidget::InitializeTools(vtkPlusChannel* aChannel
   }
   for (std::vector<QLabel*>::iterator it = m_ToolNameLabels.begin(); it != m_ToolNameLabels.end(); ++it)
   {
-    delete(*it);
+    delete (*it);
   }
   m_ToolNameLabels.clear();
   for (std::vector<QTextEdit*>::iterator it = m_ToolStateLabels.begin(); it != m_ToolStateLabels.end(); ++it)
   {
-    delete(*it);
+    delete (*it);
   }
   m_ToolStateLabels.clear();
 
@@ -94,8 +94,8 @@ PlusStatus QPlusToolStateDisplayWidget::InitializeTools(vtkPlusChannel* aChannel
   }
 
   // Get transforms
-  std::vector<PlusTransformName> transformNames;
-  PlusTrackedFrame trackedFrame;
+  std::vector<igsioTransformName> transformNames;
+  igsioTrackedFrame trackedFrame;
   m_SelectedChannel->GetTrackedFrame(trackedFrame);
   trackedFrame.GetFrameTransformNameList(transformNames);
 
@@ -109,7 +109,7 @@ PlusStatus QPlusToolStateDisplayWidget::InitializeTools(vtkPlusChannel* aChannel
   m_ToolStateLabels.resize(transformNames.size(), NULL);
 
   int i;
-  std::vector<PlusTransformName>::iterator it;
+  std::vector<igsioTransformName>::iterator it;
   for (it = transformNames.begin(), i = 0; it != transformNames.end(); ++it, ++i)
   {
     // Assemble tool name and add label to layout and label list
@@ -169,8 +169,8 @@ PlusStatus QPlusToolStateDisplayWidget::Update()
   int numberOfDisplayedTools = 0;
 
   // Get transforms
-  std::vector<PlusTransformName> transformNames;
-  PlusTrackedFrame trackedFrame;
+  std::vector<igsioTransformName> transformNames;
+  igsioTrackedFrame trackedFrame;
   m_SelectedChannel->GetTrackedFrame(trackedFrame);
   trackedFrame.GetFrameTransformNameList(transformNames);
 
@@ -185,7 +185,7 @@ PlusStatus QPlusToolStateDisplayWidget::Update()
     }
   }
 
-  std::vector<PlusTransformName>::iterator transformIt;
+  std::vector<igsioTransformName>::iterator transformIt;
   std::vector<QTextEdit*>::iterator labelIt;
   for (transformIt = transformNames.begin(), labelIt = m_ToolStateLabels.begin(); transformIt != transformNames.end() && labelIt != m_ToolStateLabels.end(); ++transformIt, ++labelIt)
   {
@@ -197,7 +197,7 @@ PlusStatus QPlusToolStateDisplayWidget::Update()
       continue;
     }
 
-    TrackedFrameFieldStatus status = FIELD_INVALID;
+    ToolStatus status(TOOL_INVALID);
     if (trackedFrame.GetFrameTransformStatus(*transformIt, status) != PLUS_SUCCESS)
     {
       std::string transformNameStr;
@@ -208,20 +208,15 @@ PlusStatus QPlusToolStateDisplayWidget::Update()
     }
     else
     {
+      label->setText(igsioCommon::ConvertToolStatusToString(status).c_str());
       switch (status)
       {
-        case (FIELD_OK):
-          label->setText("OK");
-          label->setTextColor(Qt::green);
-          break;
-        case (FIELD_INVALID):
-          label->setText("MISSING");
-          label->setTextColor(QColor::fromRgb(223, 0, 0));
-          break;
-        default:
-          label->setText("UNKNOWN");
-          label->setTextColor(QColor::fromRgb(223, 0, 0));
-          break;
+      case (TOOL_OK):
+        label->setTextColor(Qt::green);
+        break;
+      default:
+        label->setTextColor(QColor::fromRgb(223, 0, 0));
+        break;
       }
     }
   }
