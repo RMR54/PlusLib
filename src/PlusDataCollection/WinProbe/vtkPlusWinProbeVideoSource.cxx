@@ -510,8 +510,8 @@ PlusStatus vtkPlusWinProbeVideoSource::SetTransmitFrequencyMHz(float frequency)
   m_Frequency = frequency;
   if(Connected)
   {
-    ::SetTxTxFrequency(frequency);
-    SetPendingRecreateTables(true);
+    ::SetTFrequency(frequency);
+    // SetPendingRecreateTables(true);
     //what we requested might be only approximately satisfied
     m_Frequency = ::GetTxTxFrequency();
   }
