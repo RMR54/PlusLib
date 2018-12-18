@@ -114,6 +114,9 @@ int main(int argc, char* argv[])
   WinProbeDevice->SetTimeGainCompensation(3, 0.2);
   tgc = WinProbeDevice->GetTimeGainCompensation(3);
 
+  //test Focal Point Depth
+  WinProbeDevice->SetFocalPointDepth(0, 5);
+
   //test intensity compression
   uint16_t uVal = WinProbeDevice->GetLogLinearKnee();
   WinProbeDevice->SetLogLinearKnee(123);
