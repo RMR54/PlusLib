@@ -143,7 +143,7 @@ public:
   }
 
   /*! Gets the ultrasound imaging mode. */
-  Mode GetMode()
+  enum Mode GetMode()
   {
     return m_Mode;
   }
@@ -204,7 +204,7 @@ protected:
   std::vector<vtkPlusDataSource*> m_PrimarySources;
   std::vector<vtkPlusDataSource*> m_ExtraSources;
 
-  Mode m_Mode = Mode::B;
+  enum Mode m_Mode = Mode::B;
 
 public:
   vtkPlusWinProbeVideoSource(const vtkPlusWinProbeVideoSource&) = delete;
