@@ -204,7 +204,7 @@ protected:
   std::vector<vtkPlusDataSource*> m_PrimarySources;
   std::vector<vtkPlusDataSource*> m_ExtraSources;
 
-  enum Mode m_Mode = Mode::B;
+  Mode m_Mode = Mode::B;
 
 public:
   vtkPlusWinProbeVideoSource(const vtkPlusWinProbeVideoSource&) = delete;
