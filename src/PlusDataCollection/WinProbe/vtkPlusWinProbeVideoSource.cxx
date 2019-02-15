@@ -290,7 +290,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
       if(m_PrimarySources[i]->AddItem(&m_BModeBuffer[0],
                                       m_PrimarySources[i]->GetInputImageOrientation(),
                                       frameSize, VTK_UNSIGNED_CHAR,
-                                      1, US_IMG_BRIGHTNESS, 0,
+                                      1, US_IMG_RGB_COLOR, 0,
                                       this->FrameNumber,
                                       timestamp,
                                       timestamp, //no timestamp filtering needed
@@ -521,7 +521,7 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalConnect()
 
   LOG_DEBUG("GetHandleBRFInternally: " << GetHandleBRFInternally());
   LOG_DEBUG("GetBFRFImageCaptureMode: " << GetBFRFImageCaptureMode());
-  SetPendingRecreateTables(true);
+  // SetPendingRecreateTables(true);
 
   return PLUS_SUCCESS;
 }
@@ -622,7 +622,7 @@ PlusStatus vtkPlusWinProbeVideoSource::SetTransmitFrequencyMHz(float frequency)
   if(Connected)
   {
     ::SetTxTxFrequency(frequency);
-    SetPendingRecreateTables(true);
+    // SetPendingRecreateTables(true);
 
     //what we requested might be only approximately satisfied
     m_Frequency = ::GetTxTxFrequency();
@@ -677,7 +677,7 @@ PlusStatus vtkPlusWinProbeVideoSource::SetScanDepthMm(float depth)
       WPStopScanning();
     }
     ::SetSSDepth(depth);
-    SetPendingRecreateTables(true);
+    // SetPendingRecreateTables(true);
     //what we requested might be only approximately satisfied
     m_ScanDepth = ::GetSSDepth();
     m_SamplesPerLine = static_cast<unsigned int>(GetSSSamplesPerLine()); //this and decimation change depending on depth
@@ -787,7 +787,7 @@ void vtkPlusWinProbeVideoSource::SetSpatialCompoundEnabled(bool value)
     {
       SetSCCompoundAngleCount(0);
     }
-    SetPendingRecreateTables(true);
+    // SetPendingRecreateTables(true);
     m_TimestampOffset = vtkIGSIOAccurateTimer::GetSystemTime(); // recreate tables resets internal timer
   }
   m_SpatialCompoundEnabled = value;
@@ -828,7 +828,7 @@ void vtkPlusWinProbeVideoSource::SetSpatialCompoundCount(int32_t value)
   if(Connected)
   {
     SetSCCompoundAngleCount(value);
-    SetPendingRecreateTables(true);
+    // SetPendingRecreateTables(true);
     m_TimestampOffset = vtkIGSIOAccurateTimer::GetSystemTime(); // recreate tables resets internal timer
   }
   m_SpatialCompoundCount = value;
@@ -850,7 +850,7 @@ PlusStatus vtkPlusWinProbeVideoSource::SetTransducerID(std::string guid)
   if(Connected)
   {
     WPSetTransducerID(guid.c_str());
-    SetPendingRecreateTables(true);
+    // SetPendingRecreateTables(true);
   }
   return PLUS_SUCCESS;
 }
