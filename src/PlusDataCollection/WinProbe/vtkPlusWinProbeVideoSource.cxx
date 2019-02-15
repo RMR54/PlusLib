@@ -452,11 +452,6 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
     this->SetSpatialCompoundCount(m_SpatialCompoundCount);
   }
 
-  if (m_MModeEnabled)
-  {
-    SetMIsEnabled(true);
-  }
-
   //setup size for DirectX image
   LOG_DEBUG("Setting output size to " << m_LineCount << "x" << m_SamplesPerLine);
   WPSetSize(m_LineCount, m_SamplesPerLine);
@@ -469,6 +464,12 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
     return PLUS_FAIL;
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  if (m_MModeEnabled)
+  {
+    SetMIsEnabled(true);
+  }
+
 
   m_TimestampOffset = vtkIGSIOAccurateTimer::GetSystemTime();
   LOG_DEBUG("GetPendingRecreateTables: " << GetPendingRecreateTables());
