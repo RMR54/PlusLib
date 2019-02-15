@@ -81,6 +81,12 @@ public:
   /* Whether or not to use device's built-in frame reconstruction */
   bool GetUseDeviceFrameReconstruction() { return m_UseDeviceFrameReconstruction; }
 
+  /* Whether or not to enable M-Mode */
+  void SetMModeEnabled(bool value) { m_MModeEnabled = value; }
+
+  /* Whether or not to use device's built-in frame reconstruction */
+  bool GetMModeEnabled() { return m_MModeEnabled; }
+
   /*! Set ON/OFF of collecting US data. */
   PlusStatus FreezeDevice(bool freeze);
 
@@ -166,6 +172,7 @@ protected:
   unsigned m_SamplesPerLine = 512;
   std::vector<uint8_t> m_BModeBuffer; //avoid reallocating buffer every frame
   bool m_UseDeviceFrameReconstruction = true;
+  bool  m_MModeEnabled = false;
   igsioTrackedFrame::FieldMapType m_CustomFields;
   double m_TimeGainCompensation[8];
   float m_FocalPointDepth[4];

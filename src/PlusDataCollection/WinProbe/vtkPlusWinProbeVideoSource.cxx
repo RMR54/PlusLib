@@ -58,6 +58,7 @@ PlusStatus vtkPlusWinProbeVideoSource::ReadConfiguration(vtkXMLDataElement* root
   XML_READ_STRING_ATTRIBUTE_REQUIRED(TransducerID, deviceConfig);
   XML_READ_BOOL_ATTRIBUTE_OPTIONAL(UseDeviceFrameReconstruction, deviceConfig);
   XML_READ_BOOL_ATTRIBUTE_OPTIONAL(SpatialCompoundEnabled, deviceConfig);
+  XML_READ_BOOL_ATTRIBUTE_OPTIONAL(MModeEnabled, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(float, TransmitFrequencyMHz, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(float, ScanDepthMm, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(float, SpatialCompoundAngle, deviceConfig);
@@ -82,6 +83,7 @@ PlusStatus vtkPlusWinProbeVideoSource::WriteConfiguration(vtkXMLDataElement* roo
   deviceConfig->SetAttribute("TransducerID", this->m_TransducerID.c_str());
   deviceConfig->SetAttribute("UseDeviceFrameReconstruction", this->m_UseDeviceFrameReconstruction ? "TRUE" : "FALSE");
   deviceConfig->SetAttribute("SpatialCompoundEnabled", this->GetSpatialCompoundEnabled() ? "TRUE" : "FALSE");
+  deviceConfig->SetAttribute("MModeEnabled", this->m_MModeEnabled ? "TRUE" : "FALSE");
   deviceConfig->SetFloatAttribute("TransmitFrequencyMHz", this->GetTransmitFrequencyMHz());
   deviceConfig->SetFloatAttribute("ScanDepthMm", this->GetScanDepthMm());
   deviceConfig->SetFloatAttribute("SpatialCompoundAngle", this->GetSpatialCompoundAngle());
@@ -448,6 +450,11 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
   {
     this->SetSpatialCompoundAngle(m_SpatialCompoundAngle);
     this->SetSpatialCompoundCount(m_SpatialCompoundCount);
+  }
+
+  if (m_MModeEnabled)
+  {
+    this->SetMIsEnabled(true);
   }
 
   //setup size for DirectX image
