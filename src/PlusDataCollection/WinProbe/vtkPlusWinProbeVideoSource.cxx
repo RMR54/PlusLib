@@ -454,7 +454,7 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
 
   if (m_MModeEnabled)
   {
-    this->SetMIsEnabled(true);
+    SetMIsEnabled(true);
   }
 
   //setup size for DirectX image
