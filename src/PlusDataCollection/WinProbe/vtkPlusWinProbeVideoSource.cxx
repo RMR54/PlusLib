@@ -270,14 +270,14 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
       char* frameData = nullptr;
       int length = WPSaveImageToPointer(&frameData);
       assert(length == m_LineCount * m_SamplesPerLine * sizeof(uint32_t));
-      auto* frameRGBA = reinterpret_cast<uint32_t*>(frameData);
+      // auto* frameRGBA = reinterpret_cast<uint32_t*>(frameData);
 
-      // all the color channels are the same for B-mode
-      // and alpha is filled with ones (fully opaque)
-      for(unsigned i = 0; i < m_LineCount * m_SamplesPerLine; i++)
-      {
-        m_BModeBuffer[i] = static_cast<uint8_t>(frameRGBA[i]);
-      }
+      // // all the color channels are the same for B-mode
+      // // and alpha is filled with ones (fully opaque)
+      // for(unsigned i = 0; i < m_LineCount * m_SamplesPerLine; i++)
+      // {
+      //   m_BModeBuffer[i] = static_cast<uint8_t>(frameRGBA[i]);
+      // }
       WPFreePointer(frameData);
     }
     else
@@ -347,7 +347,7 @@ void vtkPlusWinProbeVideoSource::AdjustBufferSize()
   {
     m_PrimarySources[i]->Clear(); // clear current buffer content
     m_PrimarySources[i]->SetPixelType(VTK_UNSIGNED_CHAR);
-    m_PrimarySources[i]->SetImageType(US_IMG_BRIGHTNESS);
+    m_PrimarySources[i]->SetImageType(US_IMG_RGB_COLOR);
     m_PrimarySources[i]->SetOutputImageOrientation(US_IMG_ORIENT_MF);
     m_PrimarySources[i]->SetInputImageOrientation(US_IMG_ORIENT_MF);
     m_PrimarySources[i]->SetInputFrameSize(frameSize);
