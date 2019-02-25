@@ -71,6 +71,7 @@ PlusStatus vtkPlusWinProbeVideoSource::ReadConfiguration(vtkXMLDataElement* root
   const char* strMode = deviceConfig->GetAttribute("Mode");
   if (strMode)
   {
+    LOG_INFO("setting Mode");
     m_Mode = this->StringToMode(strMode);
   }
 
@@ -507,6 +508,7 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalConnect()
   }
   if(m_Mode == Mode::M)
   {
+    LOG_INFO("M-Mode enabled");
     SetMIsEnabled(true);
   }
   if(m_Mode == Mode::CFD)
