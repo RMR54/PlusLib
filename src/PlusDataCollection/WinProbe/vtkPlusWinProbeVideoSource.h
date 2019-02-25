@@ -126,7 +126,7 @@ public:
   void SetSpatialCompoundCount(int32_t value);
   int32_t GetSpatialCompoundCount();
 
-  enum Mode
+  enum class Mode
   {
     B = 0, // only B mode
     BRF, // RF mode with reference B mode
