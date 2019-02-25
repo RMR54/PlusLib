@@ -506,11 +506,11 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalConnect()
   {
     SetPWIsEnabled(true);
   }
-  if(m_Mode == Mode::M)
-  {
-    LOG_INFO("M-Mode enabled");
-    SetMIsEnabled(true);
-  }
+  // if(m_Mode == Mode::M)
+  // {
+  //   LOG_INFO("M-Mode enabled");
+  //   SetMIsEnabled(true);
+  // }
   if(m_Mode == Mode::CFD)
   {
     SetVoltage(70);
@@ -575,6 +575,11 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
   WPDXSetDrawTextLayer(false);
   WPDXSetDrawScalesAndBars(false);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  if(m_Mode == Mode::M)
+  {
+    LOG_INFO("M-Mode enabled");
+    SetMIsEnabled(true);
+  }
 
   m_TimestampOffset = vtkIGSIOAccurateTimer::GetSystemTime();
   LOG_DEBUG("GetPendingRecreateTables: " << GetPendingRecreateTables());
