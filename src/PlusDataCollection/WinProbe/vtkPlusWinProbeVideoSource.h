@@ -127,6 +127,16 @@ public:
   int32_t GetSpatialCompoundCount();
 
   void SetMModeEnabled(bool value);
+  bool GetMModeEnabled();
+
+  void SetMRevolvingEnabled(bool value);
+  bool GetMRevolvingEnabled();
+
+  void SetMPRFrequency(int32_t value);
+  int32_t GetMPRFrequency();
+
+  void SetMLineIndex(int32_t value);
+  int32_t GetMLineIndex();
 
   enum class Mode
   {
@@ -203,6 +213,10 @@ protected:
   bool m_SpatialCompoundEnabled = false;
   float m_SpatialCompoundAngle = 10.0f;
   int32_t m_SpatialCompoundCount = 0;
+  bool m_MRevolvingEnabled = false;
+  int32_t m_MPRF = 100;
+  int32_t m_MLineIndex = 60;
+  int32_t m_MWidth = 256;
   std::vector<vtkPlusDataSource*> m_PrimarySources;
   std::vector<vtkPlusDataSource*> m_ExtraSources;
 
