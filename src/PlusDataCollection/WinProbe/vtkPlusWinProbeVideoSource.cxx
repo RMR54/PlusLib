@@ -850,6 +850,27 @@ int32_t vtkPlusWinProbeVideoSource::GetSpatialCompoundCount()
   return m_SpatialCompoundCount;
 }
 
+void vtkPlusWinProbeVideoSource::SetMModeEnabled(bool value)
+{
+
+  // m_MModeEnabled = value;
+  if(Connected)
+  {
+    SetMIsEnabled(value);
+    SetPendingRecreateTables(true);
+    // m_SpatialCompoundAngle = GetSCCompoundAngle(); //in case it was not exactly satisfied
+    m_TimestampOffset = vtkIGSIOAccurateTimer::GetSystemTime(); // recreate tables resets internal timer
+  }
+  if(value)
+  {
+    m_Mode = Mode::M;
+  }
+  else
+  {
+    m_Mode = Mode::B;
+  }
+}
+
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusWinProbeVideoSource::SetTransducerID(std::string guid)
 {

@@ -126,6 +126,8 @@ public:
   void SetSpatialCompoundCount(int32_t value);
   int32_t GetSpatialCompoundCount();
 
+  void SetMModeEnabled(bool value);
+
   enum class Mode
   {
     B = 0, // only B mode
