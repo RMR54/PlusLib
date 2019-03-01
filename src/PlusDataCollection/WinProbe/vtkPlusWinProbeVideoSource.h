@@ -173,7 +173,7 @@ public:
   std::string ModeToString(Mode mode);
 
   int32_t MWidthFromSeconds(int value);
-  int MSecondsFromWidth();
+  int MSecondsFromWidth(int32_t value);
 
 protected:
   /*! Constructor */

@@ -65,7 +65,7 @@ PlusStatus vtkPlusWinProbeVideoSource::ReadConfiguration(vtkXMLDataElement* root
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(float, ScanDepthMm, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(float, SpatialCompoundAngle, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(int, SpatialCompoundCount, deviceConfig);
-  XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(int, MPRF, deviceConfig);
+  XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(int, MPRFrequency, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(int, MLineIndex, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(int, MWidth, deviceConfig);
   XML_READ_SCALAR_ATTRIBUTE_OPTIONAL(int, MAcousticLineCount, deviceConfig);
@@ -82,11 +82,17 @@ PlusStatus vtkPlusWinProbeVideoSource::ReadConfiguration(vtkXMLDataElement* root
     m_Mode = this->StringToMode(strMode);
   }
 
-  int mwidthSeconds = deviceConfig->GetAttribute("MWidth");
+  const char* mwidthSeconds_string = deviceConfig->GetAttribute("MWidth");
+  std::ostringstream mwidthSecondsStream;
+  mwidthSecondsStream << mwidthSeconds_string;
+
+  int mwidthSeconds;
+  mwidthSecondsStream >> mwidthSeconds;
+
   if (mwidthSeconds)
   {
    LOG_INFO("setting M-Mode width");
-   m_MWidth = this->MWidthFromSeconds(mwidthSeconds)
+   m_MWidth = this->MWidthFromSeconds(mwidthSeconds);
   }
 
   deviceConfig->GetVectorAttribute("TimeGainCompensation", 8, m_TimeGainCompensation);
@@ -110,9 +116,9 @@ PlusStatus vtkPlusWinProbeVideoSource::WriteConfiguration(vtkXMLDataElement* roo
   deviceConfig->SetIntAttribute("SpatialCompoundCount", this->GetSpatialCompoundCount());
   deviceConfig->SetIntAttribute("MPRF", this->GetMPRFrequency());
   deviceConfig->SetIntAttribute("MLineIndex", this->GetMLineIndex());
-  deviceConfig->SetIntAttribute("MWidth", this->MWidthFromSeconds());
-  deviceConfig->SetIntAttribute("MAcousticLineCount", this->GetMAcousticLineCount()));
-  deviceConfig->SetIntAttribute("MDepth", this->GetMDepth()));
+  deviceConfig->SetIntAttribute("MWidth", this->MSecondsFromWidth(this->m_MWidth));
+  deviceConfig->SetIntAttribute("MAcousticLineCount", this->GetMAcousticLineCount());
+  deviceConfig->SetIntAttribute("MDepth", this->GetMDepth());
   deviceConfig->SetUnsignedLongAttribute("Voltage", this->GetVoltage());
   deviceConfig->SetUnsignedLongAttribute("MinValue", this->GetMinValue());
   deviceConfig->SetUnsignedLongAttribute("MaxValue", this->GetMaxValue());
@@ -202,18 +208,19 @@ int32_t vtkPlusWinProbeVideoSource::MWidthFromSeconds(int value)
   {
     mlineWidth = 128;  //Default to 1s width
   }
-  return mlineWidth
+  return mlineWidth;
 }
 
-int vtkPlusWinProbeVideoSource::MSecondsFromWidth()
+int vtkPlusWinProbeVideoSource::MSecondsFromWidth(int32_t value)
 {
-  if(m_MWidth < 1024)
+  int mwidthSeconds;
+  if(value < 1024)
   {
-    mwidthSeconds = std::log(m_MWidth/128) / std::log(2) + 1;
+    mwidthSeconds = std::log(value/128) / std::log(2) + 1;
   }
-  else if(m_MWidth <= 8192)
+  else if(value <= 8192)
   {
-    mwidthSeconds = m_MWidth * 10 / 1024;
+    mwidthSeconds = value * 10 / 1024;
     if(mwidthSeconds == 8)
     {
       mwidthSeconds += 1;  //81 s
@@ -223,7 +230,7 @@ int vtkPlusWinProbeVideoSource::MSecondsFromWidth()
   {
     mwidthSeconds = 1;  //Default to 1s width
   }
-  return mwidthSeconds
+  return mwidthSeconds;
 }
 
 // ----------------------------------------------------------------------------
@@ -939,8 +946,8 @@ bool vtkPlusWinProbeVideoSource::GetMModeEnabled()
 {
   if(Connected)
   {
-    bool m_mode_enabled = GetMIsEnabled();
-    if(m_mode_enabled)
+    bool mode_enabled = GetMIsEnabled();
+    if(mode_enabled)
     {
       m_Mode = Mode::M;
     }
@@ -949,7 +956,7 @@ bool vtkPlusWinProbeVideoSource::GetMModeEnabled()
       m_Mode = Mode::B;
     }
   }
-  return  m_mode_enabled;
+  return mode_enabled;
 }
 
 
