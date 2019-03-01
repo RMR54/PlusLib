@@ -138,8 +138,8 @@ public:
   void SetMLineIndex(int32_t value);
   int32_t GetMLineIndex();
 
-  void SetMWidth(int32_t value);
-  int32_t GetMWidth();
+  void SetMWidth(int value);
+  int GetMWidth();
 
   void SetMAcousticLineCount(int32_t value);
   int32_t GetMAcousticLineCount();

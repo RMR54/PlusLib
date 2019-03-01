@@ -649,7 +649,7 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
     this->SetMRevolvingEnabled(m_MRevolvingEnabled);
     this->SetMPRFrequency(m_MPRF);
     this->SetMLineIndex(m_MLineIndex);
-    this->SetMWidth(m_MWidth);
+    ::SetMWidth(m_MWidth);
     this->SetMAcousticLineCount(m_MAcousticLineCount);
   }
 
@@ -1021,11 +1021,12 @@ int32_t vtkPlusWinProbeVideoSource::GetMLineIndex()
   return m_MLineIndex;
 }
 
-void vtkPlusWinProbeVideoSource::SetMWidth(int32_t value)
+void vtkPlusWinProbeVideoSource::SetMWidth(int value)
 {
   if(Connected)
   {
-    ::SetMWidth(value);
+    int32_t mwidth = this->MWidthFromSeconds(value)
+    ::SetMWidth(mwidth);
     SetPendingRecreateTables(true);
     m_TimestampOffset = vtkIGSIOAccurateTimer::GetSystemTime(); // recreate tables resets internal timer
   }
@@ -1037,6 +1038,7 @@ int32_t vtkPlusWinProbeVideoSource::GetMWidth()
   if(Connected)
   {
     m_MWidth = ::GetMWidth();
+    int mwidthSeconds = this->MSecondsFromWidth(m_MWidth)
   }
   return m_MWidth;
 }
