@@ -944,10 +944,11 @@ void vtkPlusWinProbeVideoSource::SetMModeEnabled(bool value)
 
 bool vtkPlusWinProbeVideoSource::GetMModeEnabled()
 {
+  bool mmodeEnabled;
   if(Connected)
   {
-    bool mode_enabled = GetMIsEnabled();
-    if(mode_enabled)
+    mmodeEnabled = GetMIsEnabled();
+    if(mmodeEnabled)
     {
       m_Mode = Mode::M;
     }
@@ -956,7 +957,7 @@ bool vtkPlusWinProbeVideoSource::GetMModeEnabled()
       m_Mode = Mode::B;
     }
   }
-  return mode_enabled;
+  return mmodeEnabled;
 }
 
 
