@@ -138,6 +138,15 @@ public:
   void SetMLineIndex(int32_t value);
   int32_t GetMLineIndex();
 
+  void SetMWidth(int32_t value);
+  int32_t GetMWidth();
+
+  void SetMAcousticLineCount(int32_t value);
+  int32_t GetMAcousticLineCount();
+
+  void SetMDepth(int32_t value);
+  int32_t GetMDepth();
+
   enum class Mode
   {
     B = 0, // only B mode
@@ -162,6 +171,9 @@ public:
 
   Mode StringToMode(std::string modeString);
   std::string ModeToString(Mode mode);
+
+  int32_t MWidthFromSeconds(int value);
+  int MSecondsFromWidth();
 
 protected:
   /*! Constructor */
@@ -217,6 +229,8 @@ protected:
   int32_t m_MPRF = 100;
   int32_t m_MLineIndex = 60;
   int32_t m_MWidth = 256;
+  int32_t m_MAcousticLineCount = 0;
+  int32_t m_MDepth = 0;
   std::vector<vtkPlusDataSource*> m_PrimarySources;
   std::vector<vtkPlusDataSource*> m_ExtraSources;
 
