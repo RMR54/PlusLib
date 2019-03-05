@@ -1163,6 +1163,25 @@ int32_t vtkPlusWinProbeVideoSource::GetMDepth()
   return m_MDepth;
 }
 
+void vtkPlusWinProbeVideoSource::SetBFrameRateLimit(int value)
+{
+  if(Connected)
+  {
+    SetFrameRateLimit(value);
+    SetPendingRecreateTables(true);
+  }
+  m_FrameRateLimit = value;
+}
+
+int vtkPlusWinProbeVideoSource::GetBFrameRateLimit()
+{
+  if(Connected)
+  {
+    m_FrameRateLimit = GetFrameRateLimit();
+  }
+  return m_FrameRateLimit;
+}
+
 //----------------------------------------------------------------------------
 PlusStatus vtkPlusWinProbeVideoSource::SetTransducerID(std::string guid)
 {

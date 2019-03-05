@@ -147,6 +147,9 @@ public:
   void SetMDepth(int32_t value);
   int32_t GetMDepth();
 
+  void SetBFrameRateLimit(int value);
+  int GetBFrameRateLimit();
+
   enum class Mode
   {
     B = 0, // only B mode
@@ -233,6 +236,7 @@ protected:
   int32_t m_MWidth = 256;
   int32_t m_MAcousticLineCount = 0;
   int32_t m_MDepth = 0;
+  int  m_FrameRateLimit = 85;
   std::vector<vtkPlusDataSource*> m_PrimarySources;
   std::vector<vtkPlusDataSource*> m_ExtraSources;
 
