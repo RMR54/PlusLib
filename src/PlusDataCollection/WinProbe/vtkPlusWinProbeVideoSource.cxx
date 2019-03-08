@@ -297,7 +297,9 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
       AdjustSpacing();
     }
   }
-  else if(usMode & M_PostProcess)
+  else if(usMode & M_PostProcess
+            && m_Mode == Mode::M
+         )
   {
     frameSize[0] = mGeometry->LineCount;
     frameSize[1] = mGeometry->SamplesPerLine;
@@ -363,7 +365,9 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
     }
     else
     {
-      if(usMode & M_PostProcess)
+      if(usMode & M_PostProcess
+          && m_Mode == Mode::M
+        )
       {
         this->ReconstructFrame(data, m_ExtraBuffer, frameSize);
         for(unsigned i = 0; i < m_ExtraSources.size(); i++)
@@ -979,10 +983,9 @@ void vtkPlusWinProbeVideoSource::SetMModeEnabled(bool value)
       SetMPRF(m_MPRF);
       SetMAcousticLineIndex(m_MLineIndex);
       ::SetMWidth(m_MWidth);
-      ::SetMAcousticLineCount(m_MAcousticLineCount);
     }
     SetPendingRecreateTables(true);
-    LOG_INFO("M-Mode enabled");
+    LOG_INFO("M-Mode enabled=" << value);
   }
   if(value)
   {
