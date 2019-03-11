@@ -984,6 +984,8 @@ void vtkPlusWinProbeVideoSource::SetMModeEnabled(bool value)
       SetMAcousticLineIndex(m_MLineIndex);
       ::SetMWidth(m_MWidth);
       SetPendingRecreateTables(true);
+      AdjustBufferSizes();
+      AdjustSpacing();
     }
     LOG_INFO("M-Mode enabled=" << value);
   }
