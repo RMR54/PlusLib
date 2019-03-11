@@ -373,7 +373,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
         for(unsigned i = 0; i < m_ExtraSources.size(); i++)
         {
           frameSize[0] = m_MWidth;
-          if(m_ExtraSources[i]->AddItem(&m_ExtraBuffer[0],
+          if(m_ExtraSources[i]->AddItem(&m_ExtraBuffer[i],
                                         US_IMG_ORIENT_MF,
                                         frameSize, VTK_UNSIGNED_CHAR,
                                         1, US_IMG_BRIGHTNESS, 0,
@@ -403,7 +403,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
 
         for(unsigned i = 0; i < m_PrimarySources.size(); i++)
         {
-          if(m_PrimarySources[i]->AddItem(&m_PrimaryBuffer[0],
+          if(m_PrimarySources[i]->AddItem(&m_PrimaryBuffer[i],
                                           US_IMG_ORIENT_MF,
                                           frameSize, VTK_UNSIGNED_CHAR,
                                           1, US_IMG_BRIGHTNESS, 0,
