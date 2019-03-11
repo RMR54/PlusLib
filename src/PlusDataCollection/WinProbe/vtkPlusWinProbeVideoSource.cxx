@@ -343,7 +343,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
   LOG_DEBUG("Frame: " << FrameNumber << ". Mode: " << std::setw(4) << std::hex << usMode << ". Timestamp: " << timestamp);
 
   if(usMode & B && !m_PrimarySources.empty() // B-mode and primary source is defined
-      || usMode & M_PostProcess && !m_ExtraSources.empty() // M-mode and extra source is defined
+      || usMode & M_PostProcess && !m_ExtraSources.empty() && m_Mode == Mode::M // M-mode and extra source is defined
     )
   {
     assert(length == frameSize[0] * frameSize[1] * sizeof(uint16_t) + 16); //frame + header
