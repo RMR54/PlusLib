@@ -329,10 +329,10 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
 
   //timestamp counters are in milliseconds since last sequencer restart
   double timestamp = header->TimeStamp / 1000.0;
-  if(timestamp == 0.0) // some change is being applied, so this frame is not valid
-  {
-    return; // ignore this frame
-  }
+  // if(timestamp == 0.0) // some change is being applied, so this frame is not valid
+  // {
+  //   return; // ignore this frame
+  // }
   if(timestamp < m_LastTimestamp)
   {
     m_TimestampOffset += m_LastTimestamp;
