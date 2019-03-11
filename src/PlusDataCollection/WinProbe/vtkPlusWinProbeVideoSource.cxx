@@ -1080,8 +1080,8 @@ void vtkPlusWinProbeVideoSource::SetMWidth(int value)
     int32_t mwidth = this->MWidthFromSeconds(value);
     ::SetMWidth(mwidth);
     SetPendingRecreateTables(true);
+    m_MWidth = mwidth;
   }
-  m_MWidth = value;
 }
 
 int32_t vtkPlusWinProbeVideoSource::GetMWidth()
