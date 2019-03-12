@@ -972,6 +972,10 @@ void vtkPlusWinProbeVideoSource::SetMModeEnabled(bool value)
   // m_MModeEnabled = value;
   if(Connected)
   {
+    if(value && Recording)
+    {
+      WPStopScanning();
+    }
     SetMIsEnabled(value);
     if(value)
     {
@@ -982,6 +986,10 @@ void vtkPlusWinProbeVideoSource::SetMModeEnabled(bool value)
       ::SetMAcousticLineCount(m_MAcousticLineCount);
     }
     SetPendingRecreateTables(true);
+    if(value && Recording)
+    {
+      WPExecute();
+    }
     LOG_INFO("M-Mode enabled");
   }
   if(value)
