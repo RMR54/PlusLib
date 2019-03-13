@@ -699,16 +699,20 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalStartRecording()
   WPDXSetDrawTextLayer(false);
   WPDXSetDrawScalesAndBars(false);
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  if(m_Mode == Mode::M)
-  {
-    this->SetMModeEnabled(true);
-  }
+  // if(m_Mode == Mode::M)
+  // {
+  //   this->SetMModeEnabled(true);
+  // }
 
   m_TimestampOffset = vtkIGSIOAccurateTimer::GetSystemTime();
   LOG_DEBUG("GetPendingRecreateTables: " << GetPendingRecreateTables());
   LOG_DEBUG("GetPendingRestartSequencer: " << GetPendingRestartSequencer());
   LOG_DEBUG("GetPendingRun30Frames: " << GetPendingRun30Frames());
   WPExecute();
+  if(m_Mode == Mode::M)
+  {
+    this->SetMModeEnabled(true);
+  }
   return PLUS_SUCCESS;
 }
 
