@@ -369,11 +369,12 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
         for(unsigned i = 0; i < m_ExtraSources.size(); i++)
         {
           frameSize[0] = m_MWidth;
+          m_frameNumber++;
           if(m_ExtraSources[i]->AddItem(&m_ExtraBuffer[0],
                                         US_IMG_ORIENT_MF,
                                         frameSize, VTK_UNSIGNED_CHAR,
                                         1, US_IMG_BRIGHTNESS, 0,
-                                        this->FrameNumber,
+                                        m_frameNumber,
                                         timestamp,
                                         timestamp, //no timestamp filtering needed
                                         &this->m_CustomFields) != PLUS_SUCCESS)
@@ -399,11 +400,12 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
 
         for(unsigned i = 0; i < m_PrimarySources.size(); i++)
         {
+          b_frameNumber++;
           if(m_PrimarySources[i]->AddItem(&m_PrimaryBuffer[0],
                                           US_IMG_ORIENT_MF,
                                           frameSize, VTK_UNSIGNED_CHAR,
                                           1, US_IMG_BRIGHTNESS, 0,
-                                          this->FrameNumber,
+                                          b_frameNumber,
                                           timestamp,
                                           timestamp, //no timestamp filtering needed
                                           &this->m_CustomFields) != PLUS_SUCCESS)

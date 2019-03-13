@@ -234,6 +234,8 @@ protected:
   int32_t m_MWidth = 256;
   int32_t m_MAcousticLineCount = 0;
   int32_t m_MDepth = 0;
+  unsigned b_frameNumber = 0;
+  unsigned m_frameNumber = 0;
   std::vector<vtkPlusDataSource*> m_PrimarySources;
   std::vector<vtkPlusDataSource*> m_ExtraSources;
 
