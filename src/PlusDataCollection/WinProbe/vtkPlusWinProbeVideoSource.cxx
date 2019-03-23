@@ -808,7 +808,7 @@ PlusStatus vtkPlusWinProbeVideoSource::SetScanDepthMm(float depth)
       WPStopScanning();
     }
     ::SetSSDepth(depth);
-    SetPendingRecreateTables(true);
+    // SetPendingRecreateTables(true);
     //what we requested might be only approximately satisfied
     m_ScanDepth = ::GetSSDepth();
     if(Recording)
