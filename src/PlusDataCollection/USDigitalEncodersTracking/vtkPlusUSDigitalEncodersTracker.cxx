@@ -90,6 +90,7 @@ public:
   vtkSmartPointer<vtkMatrix4x4> EncoderToReference = vtkSmartPointer<vtkMatrix4x4>::New();
   igsioTransformName TransformName;
   std::string PortName;
+  long BaudRate;
 };
 
 //-------------------------------------------------------------------------
@@ -161,6 +162,11 @@ PlusStatus vtkPlusUSDigitalEncodersTracker::InternalConnect()
     }
     else
     {
+      if(encoderInfoPos->second->BaudRate)
+      {
+        ::SetBaudRate(encoderInfoPos->second->BaudRate);
+        LOG_INFO("Baud Rate Internal connect :: " << encoderInfoPos->second->BaudRate);
+      }
       encoderInfoPos->second->Connected = true;
       encoderInfoPos->second->Model = model;
       encoderInfoPos->second->Version = version;
@@ -507,6 +513,13 @@ PlusStatus vtkPlusUSDigitalEncodersTracker::ReadConfiguration(vtkXMLDataElement*
       continue;
     }
     encoderInfo.Mode = atol(mode);
+
+    const char* baudrate = encoderInfoElement->GetAttribute("BaudRate");
+    if(baudRate)
+    {
+      encoderInfo.BaudRate = atol(baudRate);
+      LOG_INFO("Baud Rate :: " << encoderInfo.BaudRate);
+    }
 
     // Reading the resolution of an US Digital Encoder
     const char* resolution = encoderInfoElement->GetAttribute("Resolution");
