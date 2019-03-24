@@ -514,7 +514,7 @@ PlusStatus vtkPlusUSDigitalEncodersTracker::ReadConfiguration(vtkXMLDataElement*
     }
     encoderInfo.Mode = atol(mode);
 
-    const char* baudrate = encoderInfoElement->GetAttribute("BaudRate");
+    const char* baudRate = encoderInfoElement->GetAttribute("BaudRate");
     if(baudRate)
     {
       encoderInfo.BaudRate = atol(baudRate);
