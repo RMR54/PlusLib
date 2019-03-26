@@ -977,11 +977,11 @@ void vtkPlusWinProbeVideoSource::SetMModeEnabled(bool value)
     {
       SetMIsRevolving(m_MRevolvingEnabled);
       SetMPRF(m_MPRF);
-      SetMAcousticLineIndex(m_MLineIndex);
+      // SetMAcousticLineIndex(m_MLineIndex);
       ::SetMWidth(m_MWidth);
-      ::SetMAcousticLineCount(m_MAcousticLineCount);
+      // ::SetMAcousticLineCount(m_MAcousticLineCount);
     }
-    SetPendingRecreateTables(true);
+    // SetPendingRecreateTables(true);
     LOG_INFO("M-Mode enabled");
   }
   if(value)
