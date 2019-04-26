@@ -226,7 +226,7 @@ void vtkPlusWinProbeVideoSource::ReconstructFrame(char* data, std::vector<uint8_
 {
   uint16_t* frame = reinterpret_cast<uint16_t*>(data + 16);
   assert(buffer.size() == frameSize[0] * frameSize[1]);
-  const float logFactor = m_OutputKnee / std::log(1 + m_Knee);
+  const float logFactor = (255 - m_OutputKnee) / std::log(1 + m_MaxValue - m_Knee);
 
   #pragma omp parallel for
   for(unsigned t = 0; t < frameSize[0]; t++)
@@ -250,7 +250,7 @@ void vtkPlusWinProbeVideoSource::ReconstructFrame(char* data, std::vector<uint8_
       float cVal;
       if(val < m_Knee)  //linear mapping
       {
-        cVal = (val) * float(m_OutputKnee) / (m_MaxValue - m_Knee);
+        cVal = val * float(m_OutputKnee) / m_Knee;
       }
       else
       {
