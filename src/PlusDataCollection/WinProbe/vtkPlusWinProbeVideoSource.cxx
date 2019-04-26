@@ -248,13 +248,13 @@ void vtkPlusWinProbeVideoSource::ReconstructFrame(char* data, std::vector<uint8_
       }
 
       float cVal;
-      if(val < m_Knee)
+      if(val < m_Knee)  //linear mapping
+      {
+        cVal = (val) * float(m_OutputKnee) / (m_MaxValue - m_Knee);
+      }
+      else
       {
         cVal = logFactor * std::log(float(1 + val));
-      }
-      else //linear mapping
-      {
-        cVal = m_OutputKnee + (val - m_Knee) * float(255 - m_OutputKnee) / (m_MaxValue - m_Knee);
       }
       buffer[s * frameSize[0] + t] = static_cast<uint8_t>(cVal);
     }
