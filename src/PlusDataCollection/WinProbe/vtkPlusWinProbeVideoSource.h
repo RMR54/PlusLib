@@ -138,6 +138,9 @@ public:
   void SetSpatialCompoundCount(int32_t value);
   int32_t GetSpatialCompoundCount();
 
+  void SetRfEnabled(bool value);
+  bool GetRfEnabled();
+
   void SetMModeEnabled(bool value);
   bool GetMModeEnabled();
 
