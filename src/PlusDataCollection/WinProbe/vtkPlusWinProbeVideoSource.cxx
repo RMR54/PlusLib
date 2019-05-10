@@ -315,7 +315,8 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
   else if(usMode & BFRFALineImage_RFData)
   {
     frameSize[0] = brfGeometry->LineCount;
-    frameSize[1] = brfGeometry->SamplesPerLine;
+    frameSize[1] = brfGeometry->SamplesPerLine * ::GetSSDecimation();
+
     if(m_ExtraSources.empty())
     {
       return; //the source is not defined, do not waste time on processing this frame
