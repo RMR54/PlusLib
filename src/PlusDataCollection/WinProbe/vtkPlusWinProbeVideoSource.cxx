@@ -294,7 +294,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
     frameSize[0] = cfdGeometry->LineCount;
     frameSize[1] = cfdGeometry->SamplesPerKernel;
   }
-  else if(usMode & B || usMode & BFRFALineImage_RFData || usMode & BFRFALineImage_SampleData)
+  else if(usMode & B || usMode & BFRFALineImage_SampleData)
   {
     frameSize[0] = brfGeometry->LineCount;
     frameSize[1] = brfGeometry->SamplesPerLine;
@@ -309,6 +309,23 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
     else if(this->CurrentPixelSpacingMm[1] != m_ScanDepth / (m_SamplesPerLine - 1)) // we might need approximate equality check
     {
       LOG_INFO("Scan Depth changed. Adjusting spacing.");
+      AdjustSpacing();
+    }
+  }
+  else if(usMode & BFRFALineImage_RFData)
+  {
+    frameSize[0] = brfGeometry->LineCount;
+    frameSize[1] = brfGeometry->SamplesPerLine;
+    if(m_ExtraSources.empty())
+    {
+      return; //the source is not defined, do not waste time on processing this frame
+    }
+    if(frameSize != m_ExtraSources[0]->GetInputFrameSize())
+    {
+      LOG_INFO("SamplesPerLine has changed from " << m_ExtraSources[0]->GetInputFrameSize()[1]
+               << " to " << frameSize[1] << ". Adjusting buffer size.");
+      m_SamplesPerLine = frameSize[1];
+      AdjustBufferSizes();
       AdjustSpacing();
     }
   }
