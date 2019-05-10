@@ -324,6 +324,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
     {
       LOG_INFO("SamplesPerLine has changed from " << m_ExtraSources[0]->GetInputFrameSize()[1]
                << " to " << frameSize[1] << ". Adjusting buffer size.");
+      m_LineCount = frameSize[0];
       m_SamplesPerLine = frameSize[1];
       AdjustBufferSizes();
       AdjustSpacing();
