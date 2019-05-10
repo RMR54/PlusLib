@@ -1074,7 +1074,7 @@ void vtkPlusWinProbeVideoSource::SetRfEnabled(bool value)
       SetHandleBRFInternally(true);
       SetBFRFImageCaptureMode(0);
     }
-
+    SetPendingRecreateTables(true);
   }
   if(value)
   {
