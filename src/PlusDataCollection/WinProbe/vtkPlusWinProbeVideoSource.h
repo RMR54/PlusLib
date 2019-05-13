@@ -138,6 +138,9 @@ public:
   void SetSpatialCompoundCount(int32_t value);
   int32_t GetSpatialCompoundCount();
 
+  void SetARFIEnabled(bool value);
+  bool GetARFIEnabled();
+
   void SetMModeEnabled(bool value);
   bool GetMModeEnabled();
 
@@ -172,7 +175,8 @@ public:
     RF, // RF mode only
     M, // M mode
     PW, // Pulsed Wave Doppler
-    CFD // Color-Flow Doppler
+    CFD, // Color-Flow Doppler
+    ARFI // ARFI mode
   };
 
   /*! Sets the ultrasound imaging mode. */

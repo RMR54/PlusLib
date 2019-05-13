@@ -164,6 +164,8 @@ vtkPlusWinProbeVideoSource::Mode vtkPlusWinProbeVideoSource::StringToMode(std::s
   { return Mode::PW; }
   else if(modeString == "CFD")
   { return Mode::CFD; }
+  else if(modeString == "ARFI")
+  { return Mode::ARFI; }
   else
   { LOG_ERROR("Unrecognized mode: " << modeString); }
 
@@ -192,6 +194,9 @@ std::string vtkPlusWinProbeVideoSource::ModeToString(vtkPlusWinProbeVideoSource:
     break;
   case Mode::CFD:
     return "CFD";
+    break;
+  case Mode::ARFI:
+    return "ARFI";
     break;
   default:
     LOG_ERROR("Invalid mode passed: " << int(mode));
@@ -294,7 +299,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
     frameSize[0] = cfdGeometry->LineCount;
     frameSize[1] = cfdGeometry->SamplesPerKernel;
   }
-  else if(usMode & B || usMode & BFRFALineImage_RFData)
+  else if(usMode & B || usMode & BFRFALineImage_RFData || usMode & ARFI)
   {
     frameSize[0] = brfGeometry->LineCount;
     frameSize[1] = brfGeometry->SamplesPerLine;
@@ -440,7 +445,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
     LOG_DEBUG("Frame ignored - B-mode source not defined. Got mode: " << std::hex << usMode);
     return;
   }
-  else if(usMode & BFRFALineImage_RFData)
+  else if(usMode & BFRFALineImage_RFData  || usMode & ARFI)
   {
     assert(length == frameSize[1] * brfGeometry->Decimation * frameSize[0] * sizeof(int32_t));
     FrameSizeType frameSizeRF = { frameSize[1]* brfGeometry->Decimation, frameSize[0], 1 }; // x and y axes flipped on purpose
@@ -712,6 +717,10 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalConnect()
     SetMAcousticLineIndex(m_MLineIndex);
     ::SetMWidth(m_MWidth);
     ::SetMAcousticLineCount(m_MAcousticLineCount);
+  }
+  else if(m_Mode == Mode::ARFI)
+  {
+    SetARFIIsEnabled(true);
   }
 
   m_TimestampOffset = vtkIGSIOAccurateTimer::GetSystemTime();
@@ -1038,6 +1047,44 @@ int32_t vtkPlusWinProbeVideoSource::GetSpatialCompoundCount()
     m_SpatialCompoundCount = GetSCCompoundAngleCount();
   }
   return m_SpatialCompoundCount;
+}
+
+//----------------------------------------------------------------------------
+
+void vtkPlusWinProbeVideoSource::SetARFIEnabled(bool value)
+{
+  if(Connected)
+  {
+    SetARFIIsEnabled(value);
+    SetPendingRecreateTables(true);
+    LOG_INFO("ARFI mode enabled:" << value);
+  }
+  if(value)
+  {
+    m_Mode = Mode::ARFI;
+  }
+  else
+  {
+    m_Mode = Mode::B;
+  }
+}
+
+bool vtkPlusWinProbeVideoSource::GetARFIEnabled()
+{
+  bool arfiEnabled = (m_Mode == Mode::ARFI);
+  if(Connected)
+  {
+    arfiEnabled = GetARFIIsEnabled();
+    if(arfiEnabled)
+    {
+      m_Mode = Mode::ARFI;
+    }
+    else
+    {
+      m_Mode = Mode::B;
+    }
+  }
+  return arfiEnabled;
 }
 
 //----------------------------------------------------------------------------
