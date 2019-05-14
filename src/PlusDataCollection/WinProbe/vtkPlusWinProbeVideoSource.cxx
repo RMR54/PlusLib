@@ -1087,6 +1087,12 @@ bool vtkPlusWinProbeVideoSource::GetARFIEnabled()
   return arfiEnabled;
 }
 
+void vtkPlusWinProbeVideoSource::ARFIPush()
+{
+  ::ARFIPush();
+  LOG_INFO("Sent ARFI push");
+}
+
 //----------------------------------------------------------------------------
 
 void vtkPlusWinProbeVideoSource::SetMModeEnabled(bool value)

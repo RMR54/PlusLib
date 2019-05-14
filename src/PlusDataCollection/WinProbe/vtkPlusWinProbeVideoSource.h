@@ -141,6 +141,8 @@ public:
   void SetARFIEnabled(bool value);
   bool GetARFIEnabled();
 
+  void ARFIPush();
+
   void SetMModeEnabled(bool value);
   bool GetMModeEnabled();
 
