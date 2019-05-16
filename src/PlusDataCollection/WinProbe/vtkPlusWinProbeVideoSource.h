@@ -235,6 +235,7 @@ protected:
   unsigned m_SamplesPerLine = 0;
   std::vector<uint8_t> m_PrimaryBuffer;
   std::vector<uint8_t> m_ExtraBuffer;
+  std::vector<uint8_t> m_MModeBuffer;
   bool m_UseDeviceFrameReconstruction = true;
   igsioFieldMapType m_CustomFields;
   double m_TimeGainCompensation[8];
@@ -257,6 +258,7 @@ protected:
   int32_t m_BFrameRateLimit = 0;
   std::vector<vtkPlusDataSource*> m_PrimarySources;
   std::vector<vtkPlusDataSource*> m_ExtraSources;
+  std::vector<vtkPlusDataSource*> m_MModeSources;
 
   Mode m_Mode = Mode::B;
 

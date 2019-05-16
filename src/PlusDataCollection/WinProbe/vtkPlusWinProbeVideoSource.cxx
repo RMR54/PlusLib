@@ -316,13 +316,13 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
   {
     frameSize[0] = mGeometry->LineCount;
     frameSize[1] = mGeometry->SamplesPerLine;
-    if(m_ExtraSources.empty())
+    if(m_MModeSources.empty())
     {
       return; //the source is not defined, do not waste time on processing this frame
     }
-    if(frameSize != m_ExtraSources[0]->GetInputFrameSize())
+    if(frameSize != m_MModeSources[0]->GetInputFrameSize())
     {
-      LOG_INFO("SamplesPerLine has changed from " << m_ExtraSources[0]->GetInputFrameSize()[1]
+      LOG_INFO("SamplesPerLine has changed from " << m_MModeSources[0]->GetInputFrameSize()[1]
                << " to " << frameSize[1] << ". Adjusting buffer size.");
       m_SamplesPerLine = frameSize[1];
       AdjustBufferSizes();
@@ -357,7 +357,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
   LOG_DEBUG("Frame: " << FrameNumber << ". Mode: " << std::setw(4) << std::hex << usMode << ". Timestamp: " << timestamp);
 
   if(usMode & B && !m_PrimarySources.empty() // B-mode and primary source is defined
-      || usMode & M_PostProcess && !m_ExtraSources.empty() // M-mode and extra source is defined
+      || usMode & M_PostProcess && !m_MModeSources.empty() // M-mode and extra source is defined
       || usMode & BFRFALineImage_SampleData && !m_PrimarySources.empty()  // B-mode and primary source is defined, if in RF/BRF mode
     )
   {
@@ -382,11 +382,11 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
     {
       if(usMode & M_PostProcess)
       {
-        this->ReconstructFrame(data, m_ExtraBuffer, frameSize);
-        for(unsigned i = 0; i < m_ExtraSources.size(); i++)
+        this->ReconstructFrame(data, m_MModeBuffer, frameSize);
+        for(unsigned i = 0; i < m_MModeSources.size(); i++)
         {
           frameSize[0] = m_MWidth;
-          if(m_ExtraSources[i]->AddItem(&m_ExtraBuffer[0],
+          if(m_MModeSources[i]->AddItem(&m_MModeBuffer[0],
                                         US_IMG_ORIENT_MF,
                                         frameSize, VTK_UNSIGNED_CHAR,
                                         1, US_IMG_BRIGHTNESS, 0,
@@ -395,7 +395,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
                                         timestamp, //no timestamp filtering needed
                                         &this->m_CustomFields) != PLUS_SUCCESS)
           {
-            LOG_WARNING("Error adding item to extra video source " << m_ExtraSources[i]->GetSourceId());
+            LOG_WARNING("Error adding item to extra video source " << m_MModeSources[i]->GetSourceId());
           }
         }
       }
@@ -505,26 +505,40 @@ void vtkPlusWinProbeVideoSource::AdjustBufferSizes()
       m_ExtraSources[i]->SetOutputImageOrientation(US_IMG_ORIENT_FM);
       m_ExtraSources[i]->SetInputImageOrientation(US_IMG_ORIENT_FM);
       m_ExtraBuffer.swap(std::vector<uint8_t>()); // deallocate the buffer
+
+      m_ExtraSources[i]->Clear(); // clear current buffer content
+      m_ExtraSources[i]->SetInputFrameSize(frameSize);
+      LOG_INFO("SourceID: " << m_ExtraSources[i]->GetId() << ", "
+              << "Frame size: " << frameSize[0] << "x" << frameSize[1]
+              << ", pixel type: " << vtkImageScalarTypeNameMacro(m_ExtraSources[i]->GetPixelType())
+              << ", buffer image orientation: "
+              << igsioVideoFrame::GetStringFromUsImageOrientation(m_ExtraSources[i]->GetInputImageOrientation()));
     }
-    else if(m_Mode == Mode::M)
+  }
+
+for(unsigned i = 0; i < m_MModeSources.size(); i++)
+  {
+    if(m_Mode == Mode::M)
     {
       frameSize[0] = m_MWidth;
-      m_ExtraSources[i]->SetPixelType(VTK_UNSIGNED_CHAR);
-      m_ExtraSources[i]->SetImageType(US_IMG_BRIGHTNESS);
-      m_ExtraSources[i]->SetOutputImageOrientation(US_IMG_ORIENT_MF);
-      m_ExtraSources[i]->SetInputImageOrientation(US_IMG_ORIENT_MF);
-      m_ExtraBuffer.resize(m_SamplesPerLine * m_MWidth);
-    }
+      m_MModeSources[i]->SetPixelType(VTK_UNSIGNED_CHAR);
+      m_MModeSources[i]->SetImageType(US_IMG_BRIGHTNESS);
+      m_MModeSources[i]->SetOutputImageOrientation(US_IMG_ORIENT_MF);
+      m_MModeSources[i]->SetInputImageOrientation(US_IMG_ORIENT_MF);
+      m_MModeSources.resize(m_SamplesPerLine * m_MWidth);
 
-    m_ExtraSources[i]->Clear(); // clear current buffer content
-    m_ExtraSources[i]->SetInputFrameSize(frameSize);
-    LOG_INFO("SourceID: " << m_ExtraSources[i]->GetId() << ", "
-             << "Frame size: " << frameSize[0] << "x" << frameSize[1]
-             << ", pixel type: " << vtkImageScalarTypeNameMacro(m_ExtraSources[i]->GetPixelType())
-             << ", buffer image orientation: "
-             << igsioVideoFrame::GetStringFromUsImageOrientation(m_ExtraSources[i]->GetInputImageOrientation()));
+
+      m_MModeSources[i]->Clear(); // clear current buffer content
+      m_MModeSources[i]->SetInputFrameSize(frameSize);
+      LOG_INFO("SourceID: " << m_MModeSources[i]->GetId() << ", "
+              << "Frame size: " << frameSize[0] << "x" << frameSize[1]
+              << ", pixel type: " << vtkImageScalarTypeNameMacro(m_MModeSources[i]->GetPixelType())
+              << ", buffer image orientation: "
+              << igsioVideoFrame::GetStringFromUsImageOrientation(m_MModeSources[i]->GetInputImageOrientation()));
+    }
   }
 }
+
 
 //----------------------------------------------------------------------------
 void vtkPlusWinProbeVideoSource::AdjustSpacing()
@@ -585,7 +599,8 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalConnect()
 {
   this->GetVideoSourcesByPortName(vtkPlusDevice::RFMODE_PORT_NAME, m_ExtraSources);
   this->GetVideoSourcesByPortName(vtkPlusDevice::BMODE_PORT_NAME, m_PrimarySources);
-  if(m_ExtraSources.empty() && m_PrimarySources.empty())
+  this->GetVideoSourcesByPortName("MMode", m_MModeSources);
+  if(m_ExtraSources.empty() && m_PrimarySources.empty() && m_MModeSources.empty())
   {
     vtkPlusDataSource* aSource = NULL;
     if(this->GetFirstActiveOutputVideoSource(aSource) != PLUS_SUCCESS || aSource == NULL)
@@ -649,6 +664,13 @@ PlusStatus vtkPlusWinProbeVideoSource::InternalConnect()
     if(m_ExtraSources.empty())
     {
       LOG_ERROR("RF source is not defined!");
+    }
+  }
+  if(m_Mode == Mode::M)
+  {
+    if(m_MModeSources.empty())
+    {
+      LOG_ERROR("M-Mode source is not defined!");
     }
   }
   if(m_Mode == Mode::PW)
