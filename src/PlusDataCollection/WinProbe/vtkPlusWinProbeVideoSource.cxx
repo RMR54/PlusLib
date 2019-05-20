@@ -1065,6 +1065,35 @@ int32_t vtkPlusWinProbeVideoSource::GetSpatialCompoundCount()
 
 //----------------------------------------------------------------------------
 
+void vtkPlusWinProbeVideoSource::SetBRFEnabled(bool value)
+{
+  if(Connected)
+  {
+    if (value)
+    {
+      SetHandleBRFInternally(false);
+      SetBFRFImageCaptureMode(2);
+    }
+    else
+    {
+      SetHandleBRFInternally(true);
+      SetBFRFImageCaptureMode(0);
+    }
+  }
+
+  if(value)
+  {
+    m_Mode = Mode::BRF;
+  }
+  else
+  {
+    m_Mode = Mode::B;
+  }
+}
+
+
+//----------------------------------------------------------------------------
+
 void vtkPlusWinProbeVideoSource::SetMModeEnabled(bool value)
 {
   if(Connected)
