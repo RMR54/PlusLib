@@ -281,21 +281,19 @@ void vtkPlusWinProbeVideoSource::FlipTexture(char* data, const FrameSizeType& fr
 void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHeader, char* hGeometry)
 {
   CineModeFrameHeader* header = (CineModeFrameHeader*)hHeader;
-  CFDGeometryStruct* cfdGeometry = (CFDGeometryStruct*)hGeometry;
-  GeometryStruct* brfGeometry = (GeometryStruct*)hGeometry; //B-mode and RF
-  MGeometryStruct* mGeometry = (MGeometryStruct*)hGeometry;
-  PWGeometryStruct* pwGeometry = (PWGeometryStruct*)hGeometry;
   this->FrameNumber = header->TotalFrameCounter;
   InputSourceBindings usMode = header->InputSourceBinding;
   FrameSizeType frameSize = { m_LineCount, m_SamplesPerLine, 1 };
 
   if(usMode & CFD)
   {
+    CFDGeometryStruct* cfdGeometry = (CFDGeometryStruct*)hGeometry;
     frameSize[0] = cfdGeometry->LineCount;
     frameSize[1] = cfdGeometry->SamplesPerKernel;
   }
   else if(usMode & B || usMode & BFRFALineImage_RFData || usMode & BFRFALineImage_SampleData)
   {
+    GeometryStruct* brfGeometry = (GeometryStruct*)hGeometry; //B-mode and RF
     frameSize[0] = brfGeometry->LineCount;
     frameSize[1] = brfGeometry->SamplesPerLine;
     if(frameSize[1] != m_SamplesPerLine)
@@ -314,6 +312,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
   }
   else if(usMode & M_PostProcess)
   {
+    MGeometryStruct* mGeometry = (MGeometryStruct*)hGeometry;
     frameSize[0] = mGeometry->LineCount;
     frameSize[1] = mGeometry->SamplesPerLine;
     if(m_MModeSources.empty())
@@ -331,6 +330,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
   }
   else if(usMode & PWD_PostProcess)
   {
+    PWGeometryStruct* pwGeometry = (PWGeometryStruct*)hGeometry;
     frameSize[0] = pwGeometry->NumberOfImageLines;
     frameSize[1] = pwGeometry->NumberOfImageSamples;
   }
@@ -443,6 +443,7 @@ void vtkPlusWinProbeVideoSource::FrameCallback(int length, char* data, char* hHe
   }
   else if(usMode & BFRFALineImage_RFData)
   {
+    GeometryStruct* brfGeometry = (GeometryStruct*)hGeometry; //B-mode and RF
     assert(length == frameSize[1] * brfGeometry->Decimation * frameSize[0] * sizeof(int32_t));
     FrameSizeType frameSizeRF = { frameSize[1]* brfGeometry->Decimation, frameSize[0], 1 }; // x and y axes flipped on purpose
     for(unsigned i = 0; i < m_ExtraSources.size(); i++)
